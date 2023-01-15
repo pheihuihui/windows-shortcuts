@@ -1,4 +1,7 @@
-﻿namespace WinShortcuts;
+﻿using WinShortcuts.Services;
+using ServiceProvider = WinShortcuts.Services.ServiceProvider;
+
+namespace WinShortcuts;
 
 public partial class MainPage : ContentPage
 {
@@ -7,6 +10,8 @@ public partial class MainPage : ContentPage
 	public MainPage()
 	{
 		InitializeComponent();
+
+		SetupTrayIcon();
 	}
 
 	private void OnCounterClicked(object sender, EventArgs e)
@@ -19,6 +24,21 @@ public partial class MainPage : ContentPage
 			CounterBtn.Text = $"Clicked {count} times";
 
 		SemanticScreenReader.Announce(CounterBtn.Text);
+	}
+
+	private void SetupTrayIcon()
+	{
+		var trayService = ServiceProvider.GetService<ITrayService>();
+
+		if (trayService != null)
+		{
+			trayService.Initialize();
+			trayService.ClickHandler = () =>
+			{
+				DisplayAlert("aaa", "ccc", "sss");
+			};
+
+		}
 	}
 }
 

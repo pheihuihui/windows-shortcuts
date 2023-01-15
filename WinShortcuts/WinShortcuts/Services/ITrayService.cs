@@ -1,10 +1,8 @@
-﻿namespace WinShortcuts.Services
+﻿namespace WinShortcuts.Services;
+
+public interface ITrayService
 {
-    public interface ITrayService
-    {
-        void Initialize();
+    void Initialize();
 
-        Action ClickHandler { get; set; }
-    }
-
+    Action ClickHandler { get; set; }
 }

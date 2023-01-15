@@ -29,10 +29,12 @@ public static class MauiProgram
             });
         });
 
-        builder.Logging.AddDebug();
+        //builder.Logging.AddDebug();
 
         var services = builder.Services;
         services.AddSingleton<ITrayService, TrayService>();
+        services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<MainPage>();
 
         return builder.Build();
     }
