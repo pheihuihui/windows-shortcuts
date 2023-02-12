@@ -35,6 +35,34 @@
                 Clicked="OnCounterClicked"
                 HorizontalOptions="Center" />
 
+            <Button
+                x:Name="AdbBtn"
+                Text="Start server"
+                SemanticProperties.Hint="Start server"
+                Clicked="OnAdbClicked"
+                HorizontalOptions="Center" />
+
+            <Button
+                x:Name="AdbConnBtn"
+                Text="connect tv"
+                SemanticProperties.Hint="connect"
+                Clicked="OnAdbConnectClicked"
+                HorizontalOptions="Center" />
+
+            <Button
+                x:Name="AdbWakeupTV"
+                Text="wakeup tv"
+                SemanticProperties.Hint="wakeup tv"
+                Clicked="OnWakeupTvClicked"
+                HorizontalOptions="Center" />
+
+            <Button
+                x:Name="AdbSleepTV"
+                Text="sleep tv"
+                SemanticProperties.Hint="sleep"
+                Clicked="OnSleepTvClicked"
+                HorizontalOptions="Center" />
+
         </VerticalStackLayout>
     </ScrollView>
 
