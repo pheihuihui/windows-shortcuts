@@ -1,6 +1,9 @@
 extern crate native_windows_gui as nwg;
 use nwg::NativeUi;
 
+mod main_page;
+use main_page::BasicApp;
+
 #[derive(Default)]
 pub struct SystemTray {
     window: nwg::MessageWindow,
@@ -9,7 +12,9 @@ pub struct SystemTray {
     tray_menu: nwg::Menu,
     tray_item1: nwg::MenuItem,
     tray_item2: nwg::MenuItem,
-    tray_item3: nwg::MenuItem,
+    tray_exit: nwg::MenuItem,
+    tray_main_page: nwg::MenuItem,
+    tray_cleaner: nwg::MenuItem
 }
 
 impl SystemTray {
@@ -30,6 +35,15 @@ impl SystemTray {
             Some(flags),
             Some(&self.icon),
         );
+    }
+
+    fn show_main_page(&self) {
+        let _ui = BasicApp::build_ui(Default::default()).expect("Failed to build Main Page");
+        nwg::dispatch_thread_events();
+    }
+
+    fn clear_clipboard(){
+        
     }
 
     fn exit(&self) {
@@ -58,7 +72,7 @@ mod system_tray_ui {
 
             // Resources
             nwg::Icon::builder()
-                .source_file(Some("./test_rc/cog.ico"))
+                .source_file(Some("./windows.ico"))
                 .build(&mut data.icon)?;
 
             // Controls
@@ -88,7 +102,12 @@ mod system_tray_ui {
             nwg::MenuItem::builder()
                 .text("Exit")
                 .parent(&data.tray_menu)
-                .build(&mut data.tray_item3)?;
+                .build(&mut data.tray_exit)?;
+
+            nwg::MenuItem::builder()
+                .text("Main Page")
+                .parent(&data.tray_menu)
+                .build(&mut data.tray_main_page)?;
 
             // Wrap-up
             let ui = SystemTrayUi {
@@ -111,8 +130,10 @@ mod system_tray_ui {
                                 SystemTray::hello1(&evt_ui);
                             } else if &handle == &evt_ui.tray_item2 {
                                 SystemTray::hello2(&evt_ui);
-                            } else if &handle == &evt_ui.tray_item3 {
+                            } else if &handle == &evt_ui.tray_exit {
                                 SystemTray::exit(&evt_ui);
+                            } else if &handle == &evt_ui.tray_main_page {
+                                SystemTray::show_main_page(&evt_ui);
                             }
                         }
                         _ => {}
