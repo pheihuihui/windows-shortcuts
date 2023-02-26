@@ -2,17 +2,20 @@
     A very simple application that show your name in a message box.
     See `basic_d` for the derive version
 */
+use std::process::Command;
 
 extern crate native_windows_gui as nwg;
 use nwg::NativeUi;
 
-
+use crate::key_events;
 
 #[derive(Default)]
 pub struct BasicApp {
     window: nwg::Window,
     name_edit: nwg::TextInput,
     hello_button: nwg::Button,
+    connect_button: nwg::Button,
+    disconnect_button: nwg::Button,
 }
 
 impl BasicApp {
@@ -24,13 +27,24 @@ impl BasicApp {
         );
     }
 
-    fn say_goodbye(&self) {
-        nwg::modal_info_message(
-            &self.window,
-            "Goodbye",
-            &format!("Goodbye {}", self.name_edit.text()),
-        );
-        nwg::stop_thread_dispatch();
+    fn connect_tv() {
+        Command::new("adb")
+            .arg("shell")
+            .arg("input")
+            .arg("keyevent")
+            .arg(key_events::KEYCODE_WAKEUP)
+            .spawn()
+            .expect("failed to connect");
+    }
+
+    fn disconnect_tv() {
+        Command::new("adb")
+            .arg("shell")
+            .arg("input")
+            .arg("keyevent")
+            .arg(key_events::KEYCODE_SLEEP)
+            .spawn()
+            .expect("failed to disconnect");
     }
 }
 
@@ -56,8 +70,8 @@ mod basic_app_ui {
             // Controls
             nwg::Window::builder()
                 .flags(nwg::WindowFlags::WINDOW | nwg::WindowFlags::VISIBLE)
-                .size((300, 135))
-                .position((300, 300))
+                .size((300, 280))
+                .position((300, 600))
                 .title("Basic example")
                 .build(&mut data.window)?;
 
@@ -72,9 +86,16 @@ mod basic_app_ui {
             nwg::Button::builder()
                 .size((280, 70))
                 .position((10, 50))
-                .text("Say my name")
+                .text("Connect TV")
                 .parent(&data.window)
-                .build(&mut data.hello_button)?;
+                .build(&mut data.connect_button)?;
+
+            nwg::Button::builder()
+                .size((280, 70))
+                .position((10, 150))
+                .text("Disconnect TV")
+                .parent(&data.window)
+                .build(&mut data.disconnect_button)?;
 
             // Wrap-up
             let ui = BasicAppUi {
@@ -90,11 +111,10 @@ mod basic_app_ui {
                         E::OnButtonClick => {
                             if &handle == &ui.hello_button {
                                 BasicApp::say_hello(&ui);
-                            }
-                        }
-                        E::OnWindowClose => {
-                            if &handle == &ui.window {
-                                BasicApp::say_goodbye(&ui);
+                            } else if &handle == &ui.connect_button {
+                                BasicApp::connect_tv();
+                            } else if &handle == &ui.disconnect_button {
+                                BasicApp::disconnect_tv();
                             }
                         }
                         _ => {}

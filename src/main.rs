@@ -4,6 +4,9 @@ use nwg::NativeUi;
 mod main_page;
 use main_page::BasicApp;
 
+mod xinput_page;
+mod key_events;
+
 #[derive(Default)]
 pub struct SystemTray {
     window: nwg::MessageWindow,
@@ -14,7 +17,7 @@ pub struct SystemTray {
     tray_item2: nwg::MenuItem,
     tray_exit: nwg::MenuItem,
     tray_main_page: nwg::MenuItem,
-    tray_cleaner: nwg::MenuItem
+    tray_cleaner: nwg::MenuItem,
 }
 
 impl SystemTray {
@@ -42,9 +45,7 @@ impl SystemTray {
         nwg::dispatch_thread_events();
     }
 
-    fn clear_clipboard(){
-        
-    }
+    fn clear_clipboard() {}
 
     fn exit(&self) {
         nwg::stop_thread_dispatch();
@@ -57,6 +58,7 @@ impl SystemTray {
 mod system_tray_ui {
     use super::*;
     use native_windows_gui as nwg;
+    use nwg::MousePressEvent;
     use std::cell::RefCell;
     use std::ops::Deref;
     use std::rc::Rc;
@@ -120,6 +122,9 @@ mod system_tray_ui {
             let handle_events = move |evt, _evt_data, handle| {
                 if let Some(evt_ui) = evt_ui.upgrade() {
                     match evt {
+                        E::OnMousePress(MousePressEvent::MousePressLeftDown) => {
+                            SystemTray::show_main_page(&evt_ui);
+                        }
                         E::OnContextMenu => {
                             if &handle == &evt_ui.tray {
                                 SystemTray::show_menu(&evt_ui);
