@@ -6,7 +6,7 @@ use std::process::{Command, Stdio};
 
 extern crate native_windows_gui as nwg;
 
-use crate::key_events;
+use crate::constants;
 
 #[derive(Default)]
 pub struct BasicApp {
@@ -40,7 +40,7 @@ impl BasicApp {
             .arg("shell")
             .arg("input")
             .arg("keyevent")
-            .arg(key_events::KEYCODE_WAKEUP)
+            .arg(constants::KEYCODE_WAKEUP)
             .stdout(Stdio::piped())
             .output()
             .expect("Failed to wake up tv");
@@ -51,7 +51,7 @@ impl BasicApp {
             .arg("shell")
             .arg("input")
             .arg("keyevent")
-            .arg(key_events::KEYCODE_SLEEP)
+            .arg(constants::KEYCODE_SLEEP)
             .stdout(Stdio::piped())
             .output()
             .expect("Failed to sleep tv");

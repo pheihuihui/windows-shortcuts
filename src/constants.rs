@@ -5,4 +5,6 @@ pub const KEYCODE_CEC_HDMI2: i16 = 244;
 pub const KEYCODE_CEC_HDMI3: i16 = 245;
 pub const KEYCODE_CEC_HDMI4: i16 = 246;
 
+pub const CONFIG_FILE: &str = "config.txt";
+
 // adb shell input keyevent 82

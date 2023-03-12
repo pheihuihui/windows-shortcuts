@@ -1,11 +1,14 @@
 extern crate native_windows_gui as nwg;
+use std::{cell::RefCell, fs};
+
+use constants::CONFIG_FILE;
 use nwg::NativeUi;
 
 mod main_page;
 use main_page::BasicApp;
 
+mod constants;
 mod xinput_page;
-mod key_events;
 
 #[derive(Default)]
 pub struct SystemTray {
@@ -14,10 +17,13 @@ pub struct SystemTray {
     tray: nwg::TrayNotification,
     tray_menu: nwg::Menu,
     tray_item1: nwg::MenuItem,
-    tray_item2: nwg::MenuItem,
+    tray_item_ip: nwg::MenuItem,
     tray_exit: nwg::MenuItem,
     tray_main_page: nwg::MenuItem,
+    tray_ip: nwg::MenuItem,
     tray_cleaner: nwg::MenuItem,
+    tv_ip_addr: RefCell<String>,
+    tv_mac_addr: [u8; 6],
 }
 
 impl SystemTray {
@@ -26,8 +32,16 @@ impl SystemTray {
         self.tray_menu.popup(x, y);
     }
 
-    fn hello1(&self) {
+    fn say_hello(&self) {
         nwg::modal_info_message(&self.window, "Hello", "Hello World!");
+    }
+
+    fn say_ip_addr(&self) {
+        nwg::modal_info_message(
+            &self.window,
+            "ip addr",
+            self.tv_ip_addr.borrow_mut().as_ref(),
+        );
     }
 
     fn hello2(&self) {
@@ -38,6 +52,19 @@ impl SystemTray {
             Some(flags),
             Some(&self.icon),
         );
+    }
+
+    fn get_ip_addr(self) {
+        let res = fs::read_to_string(CONFIG_FILE);
+        match res {
+            Ok(val) => {
+                // nwg::modal_info_message(&self.window, "Hello", val.as_str());
+                *self.tv_ip_addr.borrow_mut() = val;
+            }
+            Err(_) => {
+                nwg::modal_error_message(&self.window, "error", "...");
+            }
+        }
     }
 
     fn show_main_page(&self) {
@@ -92,24 +119,19 @@ mod system_tray_ui {
                 .build(&mut data.tray_menu)?;
 
             nwg::MenuItem::builder()
-                .text("Hello")
+                .text("IP...")
                 .parent(&data.tray_menu)
-                .build(&mut data.tray_item1)?;
-
-            nwg::MenuItem::builder()
-                .text("Popup")
-                .parent(&data.tray_menu)
-                .build(&mut data.tray_item2)?;
-
-            nwg::MenuItem::builder()
-                .text("Exit")
-                .parent(&data.tray_menu)
-                .build(&mut data.tray_exit)?;
+                .build(&mut data.tray_item_ip)?;
 
             nwg::MenuItem::builder()
                 .text("Main Page")
                 .parent(&data.tray_menu)
                 .build(&mut data.tray_main_page)?;
+
+            nwg::MenuItem::builder()
+                .text("Exit")
+                .parent(&data.tray_menu)
+                .build(&mut data.tray_exit)?;
 
             // Wrap-up
             let ui = SystemTrayUi {
@@ -119,6 +141,21 @@ mod system_tray_ui {
 
             // Events
             let evt_ui = Rc::downgrade(&ui.inner);
+
+            if let Some(evt_ui) = evt_ui.upgrade() {
+                // SystemTray::get_ip_addr(&evt_ui);
+                let res = fs::read_to_string(CONFIG_FILE);
+                match res {
+                    Ok(val) => {
+                        // nwg::modal_info_message(&self.window, "Hello", val.as_str());
+                        *evt_ui.tv_ip_addr.borrow_mut() = val;
+                    }
+                    Err(_) => {
+                        nwg::modal_error_message(&evt_ui.window, "error", "...");
+                    }
+                }
+            }
+
             let handle_events = move |evt, _evt_data, handle| {
                 if let Some(evt_ui) = evt_ui.upgrade() {
                     match evt {
@@ -132,9 +169,9 @@ mod system_tray_ui {
                         }
                         E::OnMenuItemSelected => {
                             if &handle == &evt_ui.tray_item1 {
-                                SystemTray::hello1(&evt_ui);
-                            } else if &handle == &evt_ui.tray_item2 {
-                                SystemTray::hello2(&evt_ui);
+                                SystemTray::say_hello(&evt_ui);
+                            } else if &handle == &evt_ui.tray_item_ip {
+                                SystemTray::say_ip_addr(&evt_ui);
                             } else if &handle == &evt_ui.tray_exit {
                                 SystemTray::exit(&evt_ui);
                             } else if &handle == &evt_ui.tray_main_page {
