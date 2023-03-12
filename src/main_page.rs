@@ -2,10 +2,9 @@
     A very simple application that show your name in a message box.
     See `basic_d` for the derive version
 */
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 extern crate native_windows_gui as nwg;
-use nwg::NativeUi;
 
 use crate::key_events;
 
@@ -14,8 +13,8 @@ pub struct BasicApp {
     window: nwg::Window,
     name_edit: nwg::TextInput,
     hello_button: nwg::Button,
-    connect_button: nwg::Button,
-    disconnect_button: nwg::Button,
+    wakeup_tv_button: nwg::Button,
+    sleep_tv_button: nwg::Button,
 }
 
 impl BasicApp {
@@ -29,22 +28,33 @@ impl BasicApp {
 
     fn connect_tv() {
         Command::new("adb")
+            .arg("connect")
+            .arg("192.168.100.167")
+            .stdout(Stdio::piped())
+            .output()
+            .expect("Failed to connect to tv");
+    }
+
+    fn wakeup_tv() {
+        Command::new("adb")
             .arg("shell")
             .arg("input")
             .arg("keyevent")
             .arg(key_events::KEYCODE_WAKEUP)
-            .spawn()
-            .expect("failed to connect");
+            .stdout(Stdio::piped())
+            .output()
+            .expect("Failed to wake up tv");
     }
 
-    fn disconnect_tv() {
+    fn sleep_tv() {
         Command::new("adb")
             .arg("shell")
             .arg("input")
             .arg("keyevent")
             .arg(key_events::KEYCODE_SLEEP)
-            .spawn()
-            .expect("failed to disconnect");
+            .stdout(Stdio::piped())
+            .output()
+            .expect("Failed to sleep tv");
     }
 }
 
@@ -88,14 +98,14 @@ mod basic_app_ui {
                 .position((10, 50))
                 .text("Connect TV")
                 .parent(&data.window)
-                .build(&mut data.connect_button)?;
+                .build(&mut data.wakeup_tv_button)?;
 
             nwg::Button::builder()
                 .size((280, 70))
                 .position((10, 150))
                 .text("Disconnect TV")
                 .parent(&data.window)
-                .build(&mut data.disconnect_button)?;
+                .build(&mut data.sleep_tv_button)?;
 
             // Wrap-up
             let ui = BasicAppUi {
@@ -111,10 +121,12 @@ mod basic_app_ui {
                         E::OnButtonClick => {
                             if &handle == &ui.hello_button {
                                 BasicApp::say_hello(&ui);
-                            } else if &handle == &ui.connect_button {
+                            } else if &handle == &ui.wakeup_tv_button {
                                 BasicApp::connect_tv();
-                            } else if &handle == &ui.disconnect_button {
-                                BasicApp::disconnect_tv();
+                                BasicApp::wakeup_tv();
+                            } else if &handle == &ui.sleep_tv_button {
+                                BasicApp::connect_tv();
+                                BasicApp::sleep_tv();
                             }
                         }
                         _ => {}
