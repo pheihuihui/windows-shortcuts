@@ -118,6 +118,9 @@ mod basic_app_ui {
             let handle_events = move |evt, _evt_data, handle| {
                 if let Some(ui) = evt_ui.upgrade() {
                     match evt {
+                        E::OnWindowClose => {
+                            nwg::stop_thread_dispatch();
+                        }
                         E::OnButtonClick => {
                             if &handle == &ui.hello_button {
                                 BasicApp::say_hello(&ui);

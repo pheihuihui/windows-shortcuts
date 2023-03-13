@@ -23,7 +23,7 @@ pub struct SystemTray {
     tray_ip: nwg::MenuItem,
     tray_cleaner: nwg::MenuItem,
     tv_ip_addr: RefCell<String>,
-    tv_mac_addr: [u8; 6],
+    tv_mac_addr: RefCell<[u8; 6]>,
 }
 
 impl SystemTray {
@@ -37,11 +37,8 @@ impl SystemTray {
     }
 
     fn say_ip_addr(&self) {
-        nwg::modal_info_message(
-            &self.window,
-            "ip addr",
-            self.tv_ip_addr.borrow_mut().as_ref(),
-        );
+        let mac_str = format!("{:?}", self.tv_mac_addr);
+        nwg::modal_info_message(&self.window, "ip addr", &mac_str);
     }
 
     fn hello2(&self) {
@@ -52,19 +49,6 @@ impl SystemTray {
             Some(flags),
             Some(&self.icon),
         );
-    }
-
-    fn get_ip_addr(self) {
-        let res = fs::read_to_string(CONFIG_FILE);
-        match res {
-            Ok(val) => {
-                // nwg::modal_info_message(&self.window, "Hello", val.as_str());
-                *self.tv_ip_addr.borrow_mut() = val;
-            }
-            Err(_) => {
-                nwg::modal_error_message(&self.window, "error", "...");
-            }
-        }
     }
 
     fn show_main_page(&self) {
@@ -143,12 +127,27 @@ mod system_tray_ui {
             let evt_ui = Rc::downgrade(&ui.inner);
 
             if let Some(evt_ui) = evt_ui.upgrade() {
-                // SystemTray::get_ip_addr(&evt_ui);
+                // get ip addr and mac addr
                 let res = fs::read_to_string(CONFIG_FILE);
                 match res {
                     Ok(val) => {
-                        // nwg::modal_info_message(&self.window, "Hello", val.as_str());
-                        *evt_ui.tv_ip_addr.borrow_mut() = val;
+                        let mut ls = val.lines();
+                        let l1 = ls.next();
+                        if let Some(ip_) = l1 {
+                            let arr = ip_.split("::").collect::<Vec<&str>>();
+                            if arr.len() == 2 {
+                                *evt_ui.tv_ip_addr.borrow_mut() = arr[1].to_owned();
+                            }
+                        }
+                        let l2 = ls.next();
+                        if let Some(mac_) = l2 {
+                            let arr = mac_.split("::").collect::<Vec<&str>>();
+                            if arr.len() == 2 {
+                                if let Ok(mac_addr) = parse_mac_addr(arr[1]) {
+                                    *evt_ui.tv_mac_addr.borrow_mut() = mac_addr;
+                                }
+                            }
+                        }
                     }
                     Err(_) => {
                         nwg::modal_error_message(&evt_ui.window, "error", "...");
@@ -217,4 +216,24 @@ fn main() {
     nwg::init().expect("Failed to init Native Windows GUI");
     let _ui = SystemTray::build_ui(Default::default()).expect("Failed to build UI");
     nwg::dispatch_thread_events();
+}
+
+fn parse_mac_addr(mac: &str) -> Result<[u8; 6], &str> {
+    let arr = mac.split(":").collect::<Vec<&str>>();
+    let mut res: [u8; 6] = [0; 6];
+    if arr.len() != 6 {
+        return Err("failed 1");
+    }
+    for u in 0..6 {
+        match u8::from_str_radix(arr[u], 16) {
+            Ok(val) => {
+                println!("{:?}", val);
+                res[u] = val;
+            }
+            Err(_) => {
+                return Err("failed 2");
+            }
+        }
+    }
+    Ok(res)
 }
