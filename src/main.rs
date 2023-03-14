@@ -1,13 +1,20 @@
 extern crate native_windows_gui as nwg;
-use std::{cell::RefCell, fs};
+use std::{cell::RefCell, fs, thread, time};
 
 use constants::CONFIG_FILE;
+use magic_packet::MagicPacket;
+use monitors::set_external_display;
 use nwg::NativeUi;
 
 mod main_page;
+use adb::{connect_tv_adb, sleep_tv_adb, switch_to_port_4, wakeup_tv_adb};
 use main_page::BasicApp;
 
+mod adb;
 mod constants;
+mod magic_packet;
+mod monitors;
+mod night_light;
 mod xinput_page;
 
 #[derive(Default)]
@@ -20,8 +27,10 @@ pub struct SystemTray {
     tray_item_ip: nwg::MenuItem,
     tray_exit: nwg::MenuItem,
     tray_main_page: nwg::MenuItem,
-    tray_ip: nwg::MenuItem,
-    tray_cleaner: nwg::MenuItem,
+    tray_wakup_tv: nwg::MenuItem,
+    tray_sleep_tv: nwg::MenuItem,
+    tray_switch_to_l: nwg::MenuItem,
+    tray_switch_to_r: nwg::MenuItem,
     tv_ip_addr: RefCell<String>,
     tv_mac_addr: RefCell<[u8; 6]>,
 }
@@ -51,6 +60,31 @@ impl SystemTray {
         );
     }
 
+    fn wakeup_tv(&self) {
+        let mac = self.tv_mac_addr.clone().into_inner();
+        let ip = self.tv_ip_addr.clone().into_inner();
+        thread::spawn(move || {
+            let magic_p = MagicPacket::new(&mac);
+            let res = magic_p.send();
+            if let Ok(_) = res {
+                connect_tv_adb(&ip);
+                thread::sleep(time::Duration::from_millis(300));
+                wakeup_tv_adb();
+                thread::sleep(time::Duration::from_millis(300));
+                switch_to_port_4();
+            }
+        });
+    }
+
+    fn sleep_tv(&self) {
+        let ip = self.tv_ip_addr.clone().into_inner();
+        thread::spawn(move || {
+            connect_tv_adb(&ip);
+            thread::sleep(time::Duration::from_millis(300));
+            sleep_tv_adb();
+        });
+    }
+
     fn show_main_page(&self) {
         let _ui = BasicApp::build_ui(Default::default()).expect("Failed to build Main Page");
         nwg::dispatch_thread_events();
@@ -67,6 +101,10 @@ impl SystemTray {
 // ALL of this stuff is handled by native-windows-derive
 //
 mod system_tray_ui {
+    use crate::adb::parse_mac_addr;
+    use crate::monitors::set_internal_display;
+    use crate::night_light::{disable_night_light, enable_night_light};
+
     use super::*;
     use native_windows_gui as nwg;
     use nwg::MousePressEvent;
@@ -111,6 +149,26 @@ mod system_tray_ui {
                 .text("Main Page")
                 .parent(&data.tray_menu)
                 .build(&mut data.tray_main_page)?;
+
+            nwg::MenuItem::builder()
+                .text("Wake Up TV")
+                .parent(&data.tray_menu)
+                .build(&mut data.tray_wakup_tv)?;
+
+            nwg::MenuItem::builder()
+                .text("Sleep TV")
+                .parent(&data.tray_menu)
+                .build(&mut data.tray_sleep_tv)?;
+
+            nwg::MenuItem::builder()
+                .text("Switch to TV")
+                .parent(&data.tray_menu)
+                .build(&mut data.tray_switch_to_l)?;
+
+            nwg::MenuItem::builder()
+                .text("Switch to Monitor")
+                .parent(&data.tray_menu)
+                .build(&mut data.tray_switch_to_r)?;
 
             nwg::MenuItem::builder()
                 .text("Exit")
@@ -175,6 +233,16 @@ mod system_tray_ui {
                                 SystemTray::exit(&evt_ui);
                             } else if &handle == &evt_ui.tray_main_page {
                                 SystemTray::show_main_page(&evt_ui);
+                            } else if &handle == &evt_ui.tray_wakup_tv {
+                                SystemTray::wakeup_tv(&evt_ui);
+                            } else if &handle == &evt_ui.tray_sleep_tv {
+                                SystemTray::sleep_tv(&evt_ui);
+                            } else if &handle == &evt_ui.tray_switch_to_l {
+                                set_external_display();
+                                disable_night_light().unwrap();
+                            } else if &handle == &evt_ui.tray_switch_to_r {
+                                set_internal_display();
+                                enable_night_light().unwrap();
                             }
                         }
                         _ => {}
@@ -216,24 +284,4 @@ fn main() {
     nwg::init().expect("Failed to init Native Windows GUI");
     let _ui = SystemTray::build_ui(Default::default()).expect("Failed to build UI");
     nwg::dispatch_thread_events();
-}
-
-fn parse_mac_addr(mac: &str) -> Result<[u8; 6], &str> {
-    let arr = mac.split(":").collect::<Vec<&str>>();
-    let mut res: [u8; 6] = [0; 6];
-    if arr.len() != 6 {
-        return Err("failed 1");
-    }
-    for u in 0..6 {
-        match u8::from_str_radix(arr[u], 16) {
-            Ok(val) => {
-                println!("{:?}", val);
-                res[u] = val;
-            }
-            Err(_) => {
-                return Err("failed 2");
-            }
-        }
-    }
-    Ok(res)
 }
