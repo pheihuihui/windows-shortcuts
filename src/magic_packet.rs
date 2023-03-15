@@ -53,9 +53,6 @@ impl MagicPacket {
         Ok(())
     }
 
-    pub fn magic_bytes(&self) -> &[u8; 102] {
-        &self.magic_bytes
-    }
 }
 
 const MAGIC_BYTES_HEADER: [u8; 6] = [0xFF; 6];

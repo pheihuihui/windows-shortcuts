@@ -6,16 +6,15 @@ use magic_packet::MagicPacket;
 use monitors::set_external_display;
 use nwg::NativeUi;
 
-mod main_page;
+mod xinput_page;
 use adb::{connect_tv_adb, sleep_tv_adb, switch_to_port_4, wakeup_tv_adb};
-use main_page::BasicApp;
+use xinput_page::BasicApp;
 
 mod adb;
 mod constants;
 mod magic_packet;
 mod monitors;
 mod night_light;
-mod xinput_page;
 
 #[derive(Default)]
 pub struct SystemTray {
@@ -50,16 +49,6 @@ impl SystemTray {
         nwg::modal_info_message(&self.window, "ip addr", &mac_str);
     }
 
-    fn hello2(&self) {
-        let flags = nwg::TrayNotificationFlags::USER_ICON | nwg::TrayNotificationFlags::LARGE_ICON;
-        self.tray.show(
-            "Hello World",
-            Some("Welcome to my application"),
-            Some(flags),
-            Some(&self.icon),
-        );
-    }
-
     fn wakeup_tv(&self) {
         let mac = self.tv_mac_addr.clone().into_inner();
         let ip = self.tv_ip_addr.clone().into_inner();
@@ -85,12 +74,10 @@ impl SystemTray {
         });
     }
 
-    fn show_main_page(&self) {
+    fn show_xinput_page(&self) {
         let _ui = BasicApp::build_ui(Default::default()).expect("Failed to build Main Page");
         nwg::dispatch_thread_events();
     }
-
-    fn clear_clipboard() {}
 
     fn exit(&self) {
         nwg::stop_thread_dispatch();
@@ -146,7 +133,7 @@ mod system_tray_ui {
                 .build(&mut data.tray_item_ip)?;
 
             nwg::MenuItem::builder()
-                .text("Main Page")
+                .text("Testing Xinput")
                 .parent(&data.tray_menu)
                 .build(&mut data.tray_main_page)?;
 
@@ -217,7 +204,7 @@ mod system_tray_ui {
                 if let Some(evt_ui) = evt_ui.upgrade() {
                     match evt {
                         E::OnMousePress(MousePressEvent::MousePressLeftDown) => {
-                            SystemTray::show_main_page(&evt_ui);
+                            SystemTray::show_xinput_page(&evt_ui);
                         }
                         E::OnContextMenu => {
                             if &handle == &evt_ui.tray {
@@ -232,7 +219,7 @@ mod system_tray_ui {
                             } else if &handle == &evt_ui.tray_exit {
                                 SystemTray::exit(&evt_ui);
                             } else if &handle == &evt_ui.tray_main_page {
-                                SystemTray::show_main_page(&evt_ui);
+                                SystemTray::show_xinput_page(&evt_ui);
                             } else if &handle == &evt_ui.tray_wakup_tv {
                                 SystemTray::wakeup_tv(&evt_ui);
                             } else if &handle == &evt_ui.tray_sleep_tv {

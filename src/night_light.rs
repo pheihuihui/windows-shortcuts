@@ -85,6 +85,7 @@ pub fn disable_night_light() -> io::Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn reset_night_light() -> io::Result<()> {
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
 
