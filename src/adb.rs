@@ -1,9 +1,6 @@
-use std::{
-    io,
-    process::{Command, Stdio},
-};
+use std::process::{Command, Stdio};
 
-use crate::{constants::KEYCODE_CEC_HDMI4, magic_packet::MagicPacket};
+use crate::constants::KEYCODE_CEC_HDMI4;
 
 pub fn parse_mac_addr(mac: &str) -> Result<[u8; 6], &str> {
     let arr = mac.split(":").collect::<Vec<&str>>();
@@ -22,12 +19,6 @@ pub fn parse_mac_addr(mac: &str) -> Result<[u8; 6], &str> {
         }
     }
     Ok(res)
-}
-
-pub fn wakeup_tv_lan(mac: [u8; 6]) -> io::Result<()> {
-    let mac_address = mac;
-    let magic_packet = MagicPacket::new(&mac_address);
-    magic_packet.send()
 }
 
 pub fn wakeup_tv_adb() {

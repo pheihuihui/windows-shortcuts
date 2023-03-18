@@ -1,20 +1,19 @@
 extern crate native_windows_gui as nwg;
-use std::{cell::RefCell, fs, thread, time};
+use std::cell::RefCell;
 
 use constants::CONFIG_FILE;
-use magic_packet::MagicPacket;
+
 use monitors::set_external_display;
 use nwg::NativeUi;
 
-mod xinput_page;
-use adb::{connect_tv_adb, sleep_tv_adb, switch_to_port_4, wakeup_tv_adb};
-use xinput_page::BasicApp;
+use server::ShortServer;
 
 mod adb;
 mod constants;
 mod magic_packet;
 mod monitors;
 mod night_light;
+mod server;
 
 #[derive(Default)]
 pub struct SystemTray {
@@ -22,61 +21,17 @@ pub struct SystemTray {
     icon: nwg::Icon,
     tray: nwg::TrayNotification,
     tray_menu: nwg::Menu,
-    tray_item1: nwg::MenuItem,
-    tray_item_ip: nwg::MenuItem,
     tray_exit: nwg::MenuItem,
-    tray_main_page: nwg::MenuItem,
-    tray_wakup_tv: nwg::MenuItem,
-    tray_sleep_tv: nwg::MenuItem,
     tray_switch_to_l: nwg::MenuItem,
     tray_switch_to_r: nwg::MenuItem,
-    tv_ip_addr: RefCell<String>,
-    tv_mac_addr: RefCell<[u8; 6]>,
+    tray_hello: nwg::MenuItem,
+    short_server: RefCell<ShortServer>,
 }
 
 impl SystemTray {
     fn show_menu(&self) {
         let (x, y) = nwg::GlobalCursor::position();
         self.tray_menu.popup(x, y);
-    }
-
-    fn say_hello(&self) {
-        nwg::modal_info_message(&self.window, "Hello", "Hello World!");
-    }
-
-    fn say_ip_addr(&self) {
-        let mac_str = format!("{:?}", self.tv_mac_addr);
-        nwg::modal_info_message(&self.window, "ip addr", &mac_str);
-    }
-
-    fn wakeup_tv(&self) {
-        let mac = self.tv_mac_addr.clone().into_inner();
-        let ip = self.tv_ip_addr.clone().into_inner();
-        thread::spawn(move || {
-            let magic_p = MagicPacket::new(&mac);
-            let res = magic_p.send();
-            if let Ok(_) = res {
-                connect_tv_adb(&ip);
-                thread::sleep(time::Duration::from_millis(300));
-                wakeup_tv_adb();
-                thread::sleep(time::Duration::from_millis(300));
-                switch_to_port_4();
-            }
-        });
-    }
-
-    fn sleep_tv(&self) {
-        let ip = self.tv_ip_addr.clone().into_inner();
-        thread::spawn(move || {
-            connect_tv_adb(&ip);
-            thread::sleep(time::Duration::from_millis(300));
-            sleep_tv_adb();
-        });
-    }
-
-    fn show_xinput_page(&self) {
-        let _ui = BasicApp::build_ui(Default::default()).expect("Failed to build Main Page");
-        nwg::dispatch_thread_events();
     }
 
     fn exit(&self) {
@@ -88,7 +43,6 @@ impl SystemTray {
 // ALL of this stuff is handled by native-windows-derive
 //
 mod system_tray_ui {
-    use crate::adb::parse_mac_addr;
     use crate::monitors::set_internal_display;
     use crate::night_light::{disable_night_light, enable_night_light};
 
@@ -128,24 +82,9 @@ mod system_tray_ui {
                 .build(&mut data.tray_menu)?;
 
             nwg::MenuItem::builder()
-                .text("IP...")
+                .text("hello ")
                 .parent(&data.tray_menu)
-                .build(&mut data.tray_item_ip)?;
-
-            nwg::MenuItem::builder()
-                .text("Testing Xinput")
-                .parent(&data.tray_menu)
-                .build(&mut data.tray_main_page)?;
-
-            nwg::MenuItem::builder()
-                .text("Wake Up TV")
-                .parent(&data.tray_menu)
-                .build(&mut data.tray_wakup_tv)?;
-
-            nwg::MenuItem::builder()
-                .text("Sleep TV")
-                .parent(&data.tray_menu)
-                .build(&mut data.tray_sleep_tv)?;
+                .build(&mut data.tray_hello)?;
 
             nwg::MenuItem::builder()
                 .text("Switch to TV")
@@ -172,58 +111,26 @@ mod system_tray_ui {
             let evt_ui = Rc::downgrade(&ui.inner);
 
             if let Some(evt_ui) = evt_ui.upgrade() {
-                // get ip addr and mac addr
-                let res = fs::read_to_string(CONFIG_FILE);
-                match res {
-                    Ok(val) => {
-                        let mut ls = val.lines();
-                        let l1 = ls.next();
-                        if let Some(ip_) = l1 {
-                            let arr = ip_.split("::").collect::<Vec<&str>>();
-                            if arr.len() == 2 {
-                                *evt_ui.tv_ip_addr.borrow_mut() = arr[1].to_owned();
-                            }
-                        }
-                        let l2 = ls.next();
-                        if let Some(mac_) = l2 {
-                            let arr = mac_.split("::").collect::<Vec<&str>>();
-                            if arr.len() == 2 {
-                                if let Ok(mac_addr) = parse_mac_addr(arr[1]) {
-                                    *evt_ui.tv_mac_addr.borrow_mut() = mac_addr;
-                                }
-                            }
-                        }
-                    }
-                    Err(_) => {
-                        nwg::modal_error_message(&evt_ui.window, "error", "...");
-                    }
-                }
+                evt_ui
+                    .short_server
+                    .borrow_mut()
+                    .from_config_file(CONFIG_FILE);
+                evt_ui.short_server.borrow_mut().print_sth();
+                evt_ui.short_server.borrow_mut().start_server();
             }
 
             let handle_events = move |evt, _evt_data, handle| {
                 if let Some(evt_ui) = evt_ui.upgrade() {
                     match evt {
-                        E::OnMousePress(MousePressEvent::MousePressLeftDown) => {
-                            SystemTray::show_xinput_page(&evt_ui);
-                        }
+                        E::OnMousePress(MousePressEvent::MousePressLeftDown) => {}
                         E::OnContextMenu => {
                             if &handle == &evt_ui.tray {
                                 SystemTray::show_menu(&evt_ui);
                             }
                         }
                         E::OnMenuItemSelected => {
-                            if &handle == &evt_ui.tray_item1 {
-                                SystemTray::say_hello(&evt_ui);
-                            } else if &handle == &evt_ui.tray_item_ip {
-                                SystemTray::say_ip_addr(&evt_ui);
-                            } else if &handle == &evt_ui.tray_exit {
+                            if &handle == &evt_ui.tray_exit {
                                 SystemTray::exit(&evt_ui);
-                            } else if &handle == &evt_ui.tray_main_page {
-                                SystemTray::show_xinput_page(&evt_ui);
-                            } else if &handle == &evt_ui.tray_wakup_tv {
-                                SystemTray::wakeup_tv(&evt_ui);
-                            } else if &handle == &evt_ui.tray_sleep_tv {
-                                SystemTray::sleep_tv(&evt_ui);
                             } else if &handle == &evt_ui.tray_switch_to_l {
                                 set_external_display();
                                 disable_night_light().unwrap();
