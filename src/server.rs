@@ -48,11 +48,6 @@ impl ShortServer {
         }
     }
 
-    pub fn print_sth(&self) {
-        println!("{:?}", self.tv_ip_addr);
-        println!("{:?}", self.tv_mac_addr);
-    }
-
     pub fn start_server(&self) {
         for stream in self.listener.incoming() {
             match stream {
@@ -72,7 +67,7 @@ impl ShortServer {
         let urls: Vec<_> = http_request
             .clone()
             .into_iter()
-            .filter(|x| x.starts_with("HEAD"))
+            .filter(|x| x.starts_with("HEAD") || x.starts_with("GET"))
             .collect();
         if urls.len() == 1 {
             let url = &urls[0];
@@ -125,7 +120,7 @@ impl Default for ShortServer {
         let listener = TcpListener::bind("0.0.0.0:9111").unwrap();
         let val: ShortServer = ShortServer {
             listener: Arc::new(listener),
-            tv_ip_addr: Arc::new(Mutex::new("_".to_owned())),
+            tv_ip_addr: Arc::new(Mutex::new("2.2.2.2".to_owned())),
             tv_mac_addr: Arc::new(Mutex::new([0, 0, 0, 0, 0, 0])),
         };
         val

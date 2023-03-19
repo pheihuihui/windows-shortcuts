@@ -1,6 +1,6 @@
-use windows::Win32::Graphics::Gdi::{SDC_APPLY, SDC_TOPOLOGY_EXTERNAL, SDC_TOPOLOGY_INTERNAL};
-
-use windows::Win32::Devices::Display::SetDisplayConfig;
+use windows::Win32::Devices::Display::{
+    SetDisplayConfig, SDC_APPLY, SDC_TOPOLOGY_EXTERNAL, SDC_TOPOLOGY_INTERNAL,
+};
 
 pub fn set_external_display() -> i32 {
     let flags = SDC_TOPOLOGY_EXTERNAL | SDC_APPLY;

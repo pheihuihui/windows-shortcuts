@@ -1,5 +1,9 @@
+#![cfg_attr(
+    all(target_os = "windows", not(feature = "console"),),
+    windows_subsystem = "windows"
+)]
+
 extern crate native_windows_gui as nwg;
-use std::cell::RefCell;
 
 use constants::CONFIG_FILE;
 
@@ -25,7 +29,6 @@ pub struct SystemTray {
     tray_switch_to_l: nwg::MenuItem,
     tray_switch_to_r: nwg::MenuItem,
     tray_hello: nwg::MenuItem,
-    short_server: RefCell<ShortServer>,
 }
 
 impl SystemTray {
@@ -52,6 +55,7 @@ mod system_tray_ui {
     use std::cell::RefCell;
     use std::ops::Deref;
     use std::rc::Rc;
+    use std::thread;
 
     pub struct SystemTrayUi {
         inner: Rc<SystemTray>,
@@ -110,14 +114,11 @@ mod system_tray_ui {
             // Events
             let evt_ui = Rc::downgrade(&ui.inner);
 
-            if let Some(evt_ui) = evt_ui.upgrade() {
-                evt_ui
-                    .short_server
-                    .borrow_mut()
-                    .from_config_file(CONFIG_FILE);
-                evt_ui.short_server.borrow_mut().print_sth();
-                evt_ui.short_server.borrow_mut().start_server();
-            }
+            let short_server = ShortServer::default();
+            short_server.from_config_file(CONFIG_FILE);
+            thread::spawn(move || {
+                short_server.start_server();
+            });
 
             let handle_events = move |evt, _evt_data, handle| {
                 if let Some(evt_ui) = evt_ui.upgrade() {

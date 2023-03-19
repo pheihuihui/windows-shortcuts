@@ -1,7 +1,10 @@
 // https://github.com/RubenZwietering/Night-Light/blob/main/Night-Light.ps1
 
 use std::io;
-use winreg::enums::*;
+use winreg::enums::RegDisposition::REG_CREATED_NEW_KEY;
+use winreg::enums::RegDisposition::REG_OPENED_EXISTING_KEY;
+use winreg::enums::RegType::REG_BINARY;
+use winreg::enums::HKEY_CURRENT_USER;
 use winreg::RegKey;
 use winreg::RegValue;
 
@@ -13,7 +16,7 @@ pub fn enable_night_light() -> io::Result<()> {
     let (settings, disp) = hkcu.create_subkey(SUBKEY)?;
 
     match disp {
-        REG_CREATED_NEW_KEY => println!("A new key has been created"),
+        REG_CREATED_NEW_KEY => {}
         REG_OPENED_EXISTING_KEY => {
             let val = settings.get_raw_value("Data")?;
             let val18 = val.bytes[18];
@@ -52,7 +55,7 @@ pub fn disable_night_light() -> io::Result<()> {
     let (settings, disp) = hkcu.create_subkey(SUBKEY)?;
 
     match disp {
-        REG_CREATED_NEW_KEY => println!("A new key has been created"),
+        REG_CREATED_NEW_KEY => {}
         REG_OPENED_EXISTING_KEY => {
             let val = settings.get_raw_value("Data")?;
             let val18 = val.bytes[18];
@@ -92,7 +95,7 @@ pub fn reset_night_light() -> io::Result<()> {
     let (settings, disp) = hkcu.create_subkey(SUBKEY)?;
 
     match disp {
-        REG_CREATED_NEW_KEY => println!("A new key has been created"),
+        REG_CREATED_NEW_KEY => {}
         REG_OPENED_EXISTING_KEY => {
             let new_vec = vec![
                 67u8, 66, 1, 0, 10, 2, 1, 0, 42, 6, 248, 203, 136, 160, 6, 42, 43, 14, 19, 67, 66,
