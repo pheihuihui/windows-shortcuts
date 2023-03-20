@@ -1,6 +1,9 @@
 // https://github.com/TeemuRemes/wake-on-lan-rust/blob/master/src/lib.rs
 
-use std::net::{Ipv4Addr, ToSocketAddrs, UdpSocket};
+use std::{
+    mem::MaybeUninit,
+    net::{Ipv4Addr, ToSocketAddrs, UdpSocket},
+};
 
 pub struct MagicPacket {
     magic_bytes: [u8; 102],
@@ -8,34 +11,29 @@ pub struct MagicPacket {
 
 impl MagicPacket {
     pub fn new(mac_address: &[u8; 6]) -> MagicPacket {
-        let mut magic_bytes: [u8; 102];
+        let magic_bytes: [u8; 102];
 
+        let mut arr: [MaybeUninit<u8>; 102] = unsafe { MaybeUninit::uninit().assume_init() };
+
+        for (i, element) in arr.iter_mut().enumerate() {
+            if i < 6 {
+                *element = MaybeUninit::new(0xff);
+            } else {
+                let u = i % 6;
+                let tmp = mac_address[u];
+                *element = MaybeUninit::new(tmp);
+            }
+        }
         unsafe {
-            magic_bytes = std::mem::uninitialized();
-
-            let mut src: *const u8 = &MAGIC_BYTES_HEADER[0];
-            let mut dst: *mut u8 = &mut magic_bytes[0];
-            dst.copy_from_nonoverlapping(src, 6);
-
-            src = &mac_address[0];
-            dst = dst.offset(6);
-            dst.copy_from_nonoverlapping(src, 6);
-
-            let src: *const u8 = dst;
-            dst = dst.offset(6);
-            dst.copy_from_nonoverlapping(src, 6);
-
-            dst = dst.offset(6);
-            dst.copy_from_nonoverlapping(src, 12);
-
-            dst = dst.offset(12);
-            dst.copy_from_nonoverlapping(src, 24);
-
-            dst = dst.offset(24);
-            dst.copy_from_nonoverlapping(src, 48);
+            magic_bytes = std::mem::transmute::<_, [u8; 102]>(arr);
         }
 
         MagicPacket { magic_bytes }
+    }
+
+    #[allow(dead_code)]
+    pub fn print_sth(&self) {
+        println!("{:?}", self.magic_bytes);
     }
 
     pub fn send(&self) -> std::io::Result<()> {
@@ -52,7 +50,4 @@ impl MagicPacket {
 
         Ok(())
     }
-
 }
-
-const MAGIC_BYTES_HEADER: [u8; 6] = [0xFF; 6];

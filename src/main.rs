@@ -1,7 +1,4 @@
-#![cfg_attr(
-    all(target_os = "windows", not(feature = "console"),),
-    windows_subsystem = "windows"
-)]
+// #![windows_subsystem = "windows"]
 
 extern crate native_windows_gui as nwg;
 

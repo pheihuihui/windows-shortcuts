@@ -94,6 +94,7 @@ impl ShortServer {
         let ip = self.tv_ip_addr.lock().unwrap().clone();
         thread::spawn(move || {
             let magic_p = MagicPacket::new(&mac);
+            magic_p.print_sth();
             let res = magic_p.send();
             if let Ok(_) = res {
                 connect_tv_adb(&ip);
