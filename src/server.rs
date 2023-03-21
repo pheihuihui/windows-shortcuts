@@ -74,14 +74,21 @@ impl ShortServer {
             let url: Vec<_> = url.split(" ").collect();
             if url.len() >= 2 {
                 let url = url[1];
-                if url == "/switch_to_tv" {
-                    self.wakeup_tv();
-                    set_external_display();
-                    disable_night_light().unwrap();
-                } else if url == "/switch_to_monitor" {
-                    enable_night_light().unwrap();
-                    set_internal_display();
-                    self.sleep_tv();
+                match url {
+                    "/switch_to_tv" => {
+                        self.switch_to_tv();
+                        disable_night_light().unwrap();
+                    }
+                    "/switch_to_monitor" => {
+                        enable_night_light().unwrap();
+                        set_internal_display();
+                        self.sleep_tv();
+                    }
+                    "/switch_windows" => {}
+                    "/hello" => {
+                        println!("hello world");
+                    }
+                    _ => {}
                 }
                 let response = "HTTP/1.1 200 OK\r\n\r\n";
                 stream.write_all(response.as_bytes()).unwrap();
@@ -89,19 +96,20 @@ impl ShortServer {
         }
     }
 
-    fn wakeup_tv(&self) {
+    fn switch_to_tv(&self) {
         let mac = self.tv_mac_addr.lock().unwrap().clone();
         let ip = self.tv_ip_addr.lock().unwrap().clone();
         thread::spawn(move || {
             let magic_p = MagicPacket::new(&mac);
-            magic_p.print_sth();
             let res = magic_p.send();
             if let Ok(_) = res {
                 connect_tv_adb(&ip);
-                thread::sleep(time::Duration::from_millis(300));
+                thread::sleep(time::Duration::from_millis(200));
                 wakeup_tv_adb();
-                thread::sleep(time::Duration::from_millis(300));
+                thread::sleep(time::Duration::from_millis(200));
                 switch_to_port_4();
+                thread::sleep(time::Duration::from_millis(200));
+                set_external_display();
             }
         });
     }

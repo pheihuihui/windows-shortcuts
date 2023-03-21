@@ -1,20 +1,18 @@
-// #![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 extern crate native_windows_gui as nwg;
 
-use constants::CONFIG_FILE;
-
-use monitors::set_external_display;
-use nwg::NativeUi;
-
-use server::ShortServer;
-
 mod adb;
 mod constants;
+mod explorer;
 mod magic_packet;
 mod monitors;
 mod night_light;
 mod server;
+
+use constants::CONFIG_FILE;
+use nwg::NativeUi;
+use server::ShortServer;
 
 #[derive(Default)]
 pub struct SystemTray {
@@ -23,9 +21,6 @@ pub struct SystemTray {
     tray: nwg::TrayNotification,
     tray_menu: nwg::Menu,
     tray_exit: nwg::MenuItem,
-    tray_switch_to_l: nwg::MenuItem,
-    tray_switch_to_r: nwg::MenuItem,
-    tray_hello: nwg::MenuItem,
 }
 
 impl SystemTray {
@@ -43,8 +38,7 @@ impl SystemTray {
 // ALL of this stuff is handled by native-windows-derive
 //
 mod system_tray_ui {
-    use crate::monitors::set_internal_display;
-    use crate::night_light::{disable_night_light, enable_night_light};
+    use crate::explorer::kill_explorer;
 
     use super::*;
     use native_windows_gui as nwg;
@@ -74,28 +68,13 @@ mod system_tray_ui {
             nwg::TrayNotification::builder()
                 .parent(&data.window)
                 .icon(Some(&data.icon))
-                .tip(Some("Hello"))
+                .tip(Some("Windows Shortcuts"))
                 .build(&mut data.tray)?;
 
             nwg::Menu::builder()
                 .popup(true)
                 .parent(&data.window)
                 .build(&mut data.tray_menu)?;
-
-            nwg::MenuItem::builder()
-                .text("hello ")
-                .parent(&data.tray_menu)
-                .build(&mut data.tray_hello)?;
-
-            nwg::MenuItem::builder()
-                .text("Switch to TV")
-                .parent(&data.tray_menu)
-                .build(&mut data.tray_switch_to_l)?;
-
-            nwg::MenuItem::builder()
-                .text("Switch to Monitor")
-                .parent(&data.tray_menu)
-                .build(&mut data.tray_switch_to_r)?;
 
             nwg::MenuItem::builder()
                 .text("Exit")
@@ -120,7 +99,9 @@ mod system_tray_ui {
             let handle_events = move |evt, _evt_data, handle| {
                 if let Some(evt_ui) = evt_ui.upgrade() {
                     match evt {
-                        E::OnMousePress(MousePressEvent::MousePressLeftDown) => {}
+                        E::OnMousePress(MousePressEvent::MousePressLeftDown) => {
+                            kill_explorer();
+                        }
                         E::OnContextMenu => {
                             if &handle == &evt_ui.tray {
                                 SystemTray::show_menu(&evt_ui);
@@ -129,12 +110,6 @@ mod system_tray_ui {
                         E::OnMenuItemSelected => {
                             if &handle == &evt_ui.tray_exit {
                                 SystemTray::exit(&evt_ui);
-                            } else if &handle == &evt_ui.tray_switch_to_l {
-                                set_external_display();
-                                disable_night_light().unwrap();
-                            } else if &handle == &evt_ui.tray_switch_to_r {
-                                set_internal_display();
-                                enable_night_light().unwrap();
                             }
                         }
                         _ => {}
