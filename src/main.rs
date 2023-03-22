@@ -5,6 +5,7 @@ extern crate native_windows_gui as nwg;
 mod adb;
 mod constants;
 mod explorer;
+mod inputs;
 mod magic_packet;
 mod monitors;
 mod night_light;

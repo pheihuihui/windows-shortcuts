@@ -8,6 +8,7 @@ use std::{
 
 use crate::{
     adb::{connect_tv_adb, parse_mac_addr, sleep_tv_adb, switch_to_port_4, wakeup_tv_adb},
+    inputs::switch_windows,
     magic_packet::MagicPacket,
     monitors::{set_external_display, set_internal_display},
     night_light::{disable_night_light, enable_night_light},
@@ -84,7 +85,9 @@ impl ShortServer {
                         set_internal_display();
                         self.sleep_tv();
                     }
-                    "/switch_windows" => {}
+                    "/switch_windows" => {
+                        switch_windows();
+                    }
                     "/hello" => {
                         println!("hello world");
                     }
