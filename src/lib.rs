@@ -7,12 +7,13 @@ mod inputs;
 mod magic_packet;
 mod monitors;
 mod night_light;
+mod registry;
 mod server;
 mod startup;
 mod trayicon;
 
 pub mod utils;
-#[macro_use]
+// #[macro_use]
 pub mod macros;
 #[macro_use]
 extern crate log;
