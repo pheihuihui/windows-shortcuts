@@ -1,155 +1,55 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-extern crate native_windows_gui as nwg;
+use anyhow::{anyhow, bail, Result};
+use std::{
+    fs::{File, OpenOptions},
+    path::Path,
+};
 
-mod adb;
-mod constants;
-mod explorer;
-mod inputs;
-mod magic_packet;
-mod monitors;
-mod night_light;
-mod server;
-
-use constants::CONFIG_FILE;
-use nwg::NativeUi;
-use server::ShortServer;
-
-#[derive(Default)]
-pub struct SystemTray {
-    window: nwg::MessageWindow,
-    icon: nwg::Icon,
-    tray: nwg::TrayNotification,
-    tray_menu: nwg::Menu,
-    tray_exit: nwg::MenuItem,
-}
-
-impl SystemTray {
-    fn show_menu(&self) {
-        let (x, y) = nwg::GlobalCursor::position();
-        self.tray_menu.popup(x, y);
-    }
-
-    fn exit(&self) {
-        nwg::stop_thread_dispatch();
-    }
-}
-
-//
-// ALL of this stuff is handled by native-windows-derive
-//
-mod system_tray_ui {
-    use crate::explorer::kill_explorer;
-
-    use super::*;
-    use native_windows_gui as nwg;
-    use nwg::MousePressEvent;
-    use std::cell::RefCell;
-    use std::ops::Deref;
-    use std::rc::Rc;
-    use std::thread;
-
-    pub struct SystemTrayUi {
-        inner: Rc<SystemTray>,
-        default_handler: RefCell<Vec<nwg::EventHandler>>,
-    }
-
-    impl nwg::NativeUi<SystemTrayUi> for SystemTray {
-        fn build_ui(mut data: SystemTray) -> Result<SystemTrayUi, nwg::NwgError> {
-            use nwg::Event as E;
-
-            // Resources
-            nwg::Icon::builder()
-                .source_file(Some("./windows.ico"))
-                .build(&mut data.icon)?;
-
-            // Controls
-            nwg::MessageWindow::builder().build(&mut data.window)?;
-
-            nwg::TrayNotification::builder()
-                .parent(&data.window)
-                .icon(Some(&data.icon))
-                .tip(Some("Windows Shortcuts"))
-                .build(&mut data.tray)?;
-
-            nwg::Menu::builder()
-                .popup(true)
-                .parent(&data.window)
-                .build(&mut data.tray_menu)?;
-
-            nwg::MenuItem::builder()
-                .text("Exit")
-                .parent(&data.tray_menu)
-                .build(&mut data.tray_exit)?;
-
-            // Wrap-up
-            let ui = SystemTrayUi {
-                inner: Rc::new(data),
-                default_handler: Default::default(),
-            };
-
-            // Events
-            let evt_ui = Rc::downgrade(&ui.inner);
-
-            let short_server = ShortServer::default();
-            short_server.from_config_file(CONFIG_FILE);
-            thread::spawn(move || {
-                short_server.start_server();
-            });
-
-            let handle_events = move |evt, _evt_data, handle| {
-                if let Some(evt_ui) = evt_ui.upgrade() {
-                    match evt {
-                        E::OnMousePress(MousePressEvent::MousePressLeftDown) => {
-                            kill_explorer();
-                        }
-                        E::OnContextMenu => {
-                            if &handle == &evt_ui.tray {
-                                SystemTray::show_menu(&evt_ui);
-                            }
-                        }
-                        E::OnMenuItemSelected => {
-                            if &handle == &evt_ui.tray_exit {
-                                SystemTray::exit(&evt_ui);
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-            };
-
-            ui.default_handler
-                .borrow_mut()
-                .push(nwg::full_bind_event_handler(
-                    &ui.window.handle,
-                    handle_events,
-                ));
-
-            return Ok(ui);
-        }
-    }
-
-    impl Drop for SystemTrayUi {
-        /// To make sure that everything is freed without issues, the default handler must be unbound.
-        fn drop(&mut self) {
-            let mut handlers = self.default_handler.borrow_mut();
-            for handler in handlers.drain(0..) {
-                nwg::unbind_event_handler(&handler);
-            }
-        }
-    }
-
-    impl Deref for SystemTrayUi {
-        type Target = SystemTray;
-
-        fn deref(&self) -> &SystemTray {
-            &self.inner
-        }
-    }
-}
+use ini::Ini;
+use windows_shortcuts::{
+    alert, start,
+    utils::{get_exe_folder, SingleInstance},
+    Config,
+};
 
 fn main() {
-    nwg::init().expect("Failed to init Native Windows GUI");
-    let _ui = SystemTray::build_ui(Default::default()).expect("Failed to build UI");
-    nwg::dispatch_thread_events();
+    if let Err(err) = run() {
+        alert!("{err}");
+        std::process::exit(1);
+    }
+}
+
+fn run() -> Result<()> {
+    let config = load_config().unwrap_or_default();
+    if let Some(log_file) = &config.log_file {
+        let file = prepare_log_file(log_file).map_err(|err| {
+            anyhow!(
+                "Failed to prepare log file at {}, {err}",
+                log_file.display()
+            )
+        })?;
+        simple_logging::log_to(file, config.log_level);
+    }
+    let instance = SingleInstance::create("WindowSwitcherMutex")?;
+    if !instance.is_single() {
+        bail!("Another instance is running. This instance will abort.")
+    }
+    start(&config)
+}
+
+fn load_config() -> Result<Config> {
+    let folder = get_exe_folder()?;
+    let ini_file = folder.join("window-switcher.ini");
+    let conf =
+        Ini::load_from_file(ini_file).map_err(|err| anyhow!("Faile to load ini file, {err}"))?;
+    Config::load(&conf)
+}
+
+fn prepare_log_file(path: &Path) -> std::io::Result<File> {
+    if path.exists() {
+        OpenOptions::new().append(true).open(path)
+    } else {
+        File::create(path)
+    }
 }
