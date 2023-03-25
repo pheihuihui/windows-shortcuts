@@ -2,25 +2,6 @@ use std::process::{Command, Stdio};
 
 use crate::constants::KEYCODE_CEC_HDMI4;
 
-pub fn parse_mac_addr(mac: &str) -> Result<[u8; 6], &str> {
-    let arr = mac.split(":").collect::<Vec<&str>>();
-    let mut res: [u8; 6] = [0; 6];
-    if arr.len() != 6 {
-        return Err("failed 1");
-    }
-    for u in 0..6 {
-        match u8::from_str_radix(arr[u], 16) {
-            Ok(val) => {
-                res[u] = val;
-            }
-            Err(_) => {
-                return Err("failed 2");
-            }
-        }
-    }
-    Ok(res)
-}
-
 pub fn wakeup_tv_adb() {
     Command::new("adb")
         .arg("shell")

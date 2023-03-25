@@ -1,30 +1,15 @@
 use anyhow::{anyhow, Result};
-use indexmap::IndexMap;
-use windows::core::{Error, PCWSTR, PWSTR};
+use windows::core::{Error, PCWSTR};
 use windows::Win32::Foundation::{
     CloseHandle, SetLastError, BOOL, ERROR_ALREADY_EXISTS, ERROR_SUCCESS, HANDLE, HWND, LPARAM,
 };
-use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_CLOAKED, DWM_CLOAKED_SHELL};
-use windows::Win32::System::Console::{AllocConsole, FreeConsole, GetConsoleWindow};
-use windows::Win32::System::LibraryLoader::GetModuleFileNameW;
-use windows::Win32::System::Threading::{
-    CreateMutexW, OpenProcess, QueryFullProcessImageNameW, ReleaseMutex, PROCESS_NAME_WIN32,
-    PROCESS_QUERY_INFORMATION, PROCESS_VM_READ,
-};
-use windows::Win32::UI::Controls::STATE_SYSTEM_INVISIBLE;
 
-use windows::Win32::UI::Shell::{
-    SHGetFileInfoW, SHFILEINFOW, SHGFI_ICON, SHGFI_LARGEICON, SHGFI_USEFILEATTRIBUTES,
-};
-use windows::Win32::UI::WindowsAndMessaging::{
-    EnumWindows, GetAncestor, GetForegroundWindow, GetLastActivePopup, GetTitleBarInfo,
-    GetWindowLongPtrW, GetWindowPlacement, GetWindowThreadProcessId, IsIconic, IsWindowVisible,
-    SetForegroundWindow, SetWindowPos, ShowWindow, GA_ROOTOWNER, GWL_EXSTYLE, GWL_USERDATA, HICON,
-    SWP_NOZORDER, SW_RESTORE, TITLEBARINFO, WINDOWPLACEMENT, WS_EX_TOPMOST,
-};
+use windows::Win32::System::LibraryLoader::GetModuleFileNameW;
+use windows::Win32::System::Threading::{CreateMutexW, ReleaseMutex};
+
+use windows::Win32::UI::WindowsAndMessaging::GWL_USERDATA;
 
 use std::path::PathBuf;
-use std::{ffi::c_void, mem::size_of};
 
 pub const BUFFER_SIZE: usize = 1024;
 
@@ -42,196 +27,6 @@ pub fn get_exe_path() -> Vec<u16> {
     path[..size].to_vec()
 }
 
-pub fn get_window_pid(hwnd: HWND) -> u32 {
-    let mut pid: u32 = 0;
-    unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid as *mut u32)) };
-    pid
-}
-
-pub fn get_module_path(pid: u32) -> String {
-    let handle =
-        match unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, None, pid) } {
-            Ok(v) => v,
-            Err(_) => {
-                return String::new();
-            }
-        };
-    let mut len: u32 = 1024;
-    let mut name = vec![0u16; len as usize];
-    let ret = unsafe {
-        QueryFullProcessImageNameW(
-            handle,
-            PROCESS_NAME_WIN32,
-            PWSTR(name.as_mut_ptr()),
-            &mut len,
-        )
-    };
-    if !ret.as_bool() || len == 0 {
-        return String::default();
-    }
-    unsafe { name.set_len(len as usize) };
-    String::from_utf16_lossy(&name)
-}
-
-pub fn get_window_exe(hwnd: HWND) -> String {
-    let pid = get_window_pid(hwnd);
-    if pid == 0 {
-        return String::new();
-    }
-    let module_path = get_module_path(pid);
-    get_basename(&module_path)
-}
-
-pub fn get_basename(path: &str) -> String {
-    path.split('\\').last().unwrap_or_default().to_lowercase()
-}
-
-pub fn is_iconic_window(hwnd: HWND) -> bool {
-    unsafe { IsIconic(hwnd) }.as_bool()
-}
-
-pub fn is_visible_window(hwnd: HWND) -> bool {
-    let ret = unsafe { IsWindowVisible(hwnd) };
-    ret.as_bool()
-}
-
-pub fn is_topmost_window(hwnd: HWND) -> bool {
-    let ex_style = unsafe { GetWindowLongPtrW(hwnd, GWL_EXSTYLE) } as u32;
-    ex_style & WS_EX_TOPMOST.0 != 0
-}
-
-pub fn is_cloaked_window(hwnd: HWND) -> bool {
-    let mut cloaked = 0u32;
-    let _ = unsafe {
-        DwmGetWindowAttribute(
-            hwnd,
-            DWMWA_CLOAKED,
-            &mut cloaked as *mut u32 as *mut c_void,
-            size_of::<u32>() as u32,
-        )
-    };
-    cloaked != 0 && DWM_CLOAKED_SHELL != 0
-}
-
-pub fn is_popup_window(hwnd: HWND) -> bool {
-    let mut wnd_walk = HWND::default();
-
-    // Start at the root owner
-    let mut hwnd_try = unsafe { GetAncestor(hwnd, GA_ROOTOWNER) };
-
-    // See if we are the last active visible popup
-    while hwnd_try != wnd_walk {
-        wnd_walk = hwnd_try;
-        hwnd_try = unsafe { GetLastActivePopup(wnd_walk) };
-
-        if is_visible_window(hwnd_try) {
-            break;
-        }
-    }
-    wnd_walk != hwnd
-}
-
-pub fn is_special_window(hwnd: HWND) -> bool {
-    // like task tray programs and "Program Manager"
-    let mut ti: TITLEBARINFO = TITLEBARINFO {
-        cbSize: size_of::<TITLEBARINFO>() as u32,
-        ..Default::default()
-    };
-
-    unsafe {
-        GetTitleBarInfo(hwnd, &mut ti);
-    }
-
-    ti.rgstate[0] & STATE_SYSTEM_INVISIBLE.0 != 0
-}
-
-pub fn is_small_window(hwnd: HWND) -> bool {
-    let mut placement = WINDOWPLACEMENT::default();
-    unsafe { GetWindowPlacement(hwnd, &mut placement) };
-    let rect = placement.rcNormalPosition;
-    (rect.right - rect.left) * (rect.bottom - rect.top) < 250
-}
-
-pub fn get_foreground_window() -> HWND {
-    unsafe { GetForegroundWindow() }
-}
-
-pub fn set_foregound_window(hwnd: HWND) -> Result<()> {
-    unsafe {
-        if is_iconic_window(hwnd) {
-            ShowWindow(hwnd, SW_RESTORE);
-        }
-        if hwnd == get_foreground_window() {
-            return Ok(());
-        }
-        if SetForegroundWindow(hwnd).ok().is_err() {
-            AllocConsole();
-            let hwnd_console = GetConsoleWindow();
-            SetWindowPos(hwnd_console, None, 0, 0, 0, 0, SWP_NOZORDER);
-            FreeConsole();
-            SetForegroundWindow(hwnd);
-        }
-    };
-    Ok(())
-}
-
-pub fn get_module_icon(module_path: &str) -> Option<HICON> {
-    let path = to_wstring(module_path);
-    let path = PCWSTR(path.as_ptr());
-
-    let mut shfi: SHFILEINFOW = Default::default();
-    let size = size_of::<SHFILEINFOW>() as u32;
-    let result = unsafe {
-        SHGetFileInfoW(
-            path,
-            Default::default(),
-            Some(&mut shfi),
-            size,
-            SHGFI_ICON | SHGFI_LARGEICON | SHGFI_USEFILEATTRIBUTES,
-        )
-    };
-    if result == 0 {
-        return None;
-    }
-    Some(shfi.hIcon)
-}
-
-pub fn list_windows(is_switch_apps: bool) -> Result<IndexMap<String, Vec<isize>>> {
-    let mut data = EnumWindowsData {
-        is_switch_apps,
-        windows: Default::default(),
-    };
-    unsafe { EnumWindows(Some(enum_window), LPARAM(&mut data as *mut _ as isize)).ok() }
-        .map_err(|e| anyhow!("Fail to get windows {}", e))?;
-    debug!("list windows {:?} {is_switch_apps}", data.windows);
-    Ok(data.windows)
-}
-
-#[derive(Debug)]
-struct EnumWindowsData {
-    is_switch_apps: bool,
-    windows: IndexMap<String, Vec<isize>>,
-}
-
-extern "system" fn enum_window(hwnd: HWND, lparam: LPARAM) -> BOOL {
-    let state: &mut EnumWindowsData = unsafe { &mut *(lparam.0 as *mut _) };
-    if state.is_switch_apps
-        && (is_iconic_window(hwnd)
-            || is_topmost_window(hwnd)
-            || is_small_window(hwnd)
-            || is_special_window(hwnd))
-    {
-        return BOOL(1);
-    }
-    if !is_visible_window(hwnd) || is_cloaked_window(hwnd) || is_popup_window(hwnd) {
-        return BOOL(1);
-    }
-    let pid = get_window_pid(hwnd);
-    let module_path = get_module_path(pid);
-    state.windows.entry(module_path).or_default().push(hwnd.0);
-    BOOL(1)
-}
-
 #[cfg(target_arch = "x86_64")]
 pub fn get_window_ptr(hwnd: HWND) -> isize {
     unsafe { windows::Win32::UI::WindowsAndMessaging::GetWindowLongPtrW(hwnd, GWL_USERDATA) }
@@ -242,7 +37,6 @@ pub fn set_window_ptr(hwnd: HWND, ptr: isize) -> isize {
     unsafe { windows::Win32::UI::WindowsAndMessaging::SetWindowLongPtrW(hwnd, GWL_USERDATA, ptr) }
 }
 
-#[allow(unused)]
 #[inline]
 /// Use to wrap fallible Win32 functions.
 /// First calls SetLastError(0).
@@ -342,4 +136,23 @@ impl Drop for SingleInstance {
             }
         }
     }
+}
+
+pub fn parse_mac_addr(mac: &str) -> Result<[u8; 6], &str> {
+    let arr = mac.split(":").collect::<Vec<&str>>();
+    let mut res: [u8; 6] = [0; 6];
+    if arr.len() != 6 {
+        return Err("failed 1");
+    }
+    for u in 0..6 {
+        match u8::from_str_radix(arr[u], 16) {
+            Ok(val) => {
+                res[u] = val;
+            }
+            Err(_) => {
+                return Err("failed 2");
+            }
+        }
+    }
+    Ok(res)
 }

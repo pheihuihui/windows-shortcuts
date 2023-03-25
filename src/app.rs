@@ -38,7 +38,7 @@ static S_U_TASKBAR_RESTART: Lazy<u32> =
 
 pub struct App {
     hwnd: HWND,
-    trayicon: Option<TrayIcon>,
+    trayicon: TrayIcon,
     startup: Startup,
 }
 
@@ -46,10 +46,7 @@ impl App {
     pub fn start(config: &Config) -> Result<()> {
         let hwnd = Self::create_window()?;
 
-        let trayicon = match config.trayicon {
-            true => Some(TrayIcon::create()),
-            false => None,
-        };
+        let trayicon = TrayIcon::create();
 
         let startup = Startup::init()?;
 
@@ -131,9 +128,7 @@ impl App {
     }
 
     fn set_trayicon(&mut self) -> Result<()> {
-        if let Some(trayicon) = self.trayicon.as_mut() {
-            trayicon.register(self.hwnd)?;
-        }
+        self.trayicon.register(self.hwnd)?;
         Ok(())
     }
 
@@ -156,15 +151,15 @@ impl App {
         match msg {
             WM_USER_TRAYICON => {
                 let app = get_app(hwnd)?;
-                if let Some(trayicon) = app.trayicon.as_mut() {
-                    let keycode = lparam.0 as u32;
-                    if keycode == WM_RBUTTONUP {
-                        trayicon.show(app.startup.is_enable)?;
-                    }
-                    if keycode == WM_LBUTTONUP {
-                        kill_explorer();
-                    }
+
+                let keycode = lparam.0 as u32;
+                if keycode == WM_RBUTTONUP {
+                    app.trayicon.show(app.startup.is_enable)?;
                 }
+                if keycode == WM_LBUTTONUP {
+                    kill_explorer();
+                }
+
                 return Ok(LRESULT(0));
             }
             WM_COMMAND => {

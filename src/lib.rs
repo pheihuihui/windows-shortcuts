@@ -1,7 +1,7 @@
 mod adb;
 mod app;
 mod config;
-mod constants;
+pub mod constants;
 mod explorer;
 mod inputs;
 mod magic_packet;

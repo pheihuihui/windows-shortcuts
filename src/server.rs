@@ -7,11 +7,12 @@ use std::{
 };
 
 use crate::{
-    adb::{connect_tv_adb, parse_mac_addr, sleep_tv_adb, switch_to_port_4, wakeup_tv_adb},
+    adb::{connect_tv_adb, sleep_tv_adb, switch_to_port_4, wakeup_tv_adb},
     inputs::switch_windows,
     magic_packet::MagicPacket,
     monitors::{set_external_display, set_internal_display},
     night_light::{disable_night_light, enable_night_light},
+    utils::parse_mac_addr,
 };
 
 pub struct ShortServer {
@@ -21,8 +22,8 @@ pub struct ShortServer {
 }
 
 impl ShortServer {
-    pub fn from_config_file(&self, config: &str) {
-        let res = fs::read_to_string(config);
+    pub fn from_config_file(&self, file: &str) {
+        let res = fs::read_to_string(file);
         match res {
             Ok(val) => {
                 let mut ls = val.lines();
