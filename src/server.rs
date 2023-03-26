@@ -1,5 +1,4 @@
 use std::{
-    fs,
     io::{BufRead, BufReader, Write},
     net::{TcpListener, TcpStream},
     sync::{Arc, Mutex},
@@ -7,12 +6,12 @@ use std::{
 };
 
 use crate::{
-    adb::{connect_tv_adb, sleep_tv_adb, switch_to_port_4, wakeup_tv_adb},
+    adb::{connect_tv_adb, sleep_tv_adb, switch_to_home, switch_to_port_4, wakeup_tv_adb},
     inputs::switch_windows,
     magic_packet::MagicPacket,
     monitors::{set_external_display, set_internal_display},
     night_light::{disable_night_light, enable_night_light},
-    utils::parse_mac_addr,
+    Config,
 };
 
 pub struct ShortServer {
@@ -22,31 +21,15 @@ pub struct ShortServer {
 }
 
 impl ShortServer {
-    pub fn from_config_file(&self, file: &str) {
-        let res = fs::read_to_string(file);
-        match res {
-            Ok(val) => {
-                let mut ls = val.lines();
-                let l1 = ls.next();
-                if let Some(ip_) = l1 {
-                    let arr = ip_.split("::").collect::<Vec<&str>>();
-                    if arr.len() == 2 {
-                        let mut ip_addr = self.tv_ip_addr.lock().unwrap();
-                        *ip_addr = arr[1].to_owned();
-                    }
-                }
-                let l2 = ls.next();
-                if let Some(mac_) = l2 {
-                    let arr = mac_.split("::").collect::<Vec<&str>>();
-                    if arr.len() == 2 {
-                        if let Ok(mac_addr) = parse_mac_addr(arr[1]) {
-                            let mut mac_addr_ = self.tv_mac_addr.lock().unwrap();
-                            *mac_addr_ = mac_addr;
-                        }
-                    }
-                }
-            }
-            Err(_) => {}
+    pub fn from_config(config: &Config) -> Self {
+        let ip_addr = config.tv_ip_addr.to_owned().into_inner();
+        let mac_addr = config.tv_mac_addr.to_owned().into_inner();
+        let port = config.server_port.to_owned().into_inner();
+        let url = format!("0.0.0.0:{port}");
+        ShortServer {
+            listener: Arc::new(TcpListener::bind(url).unwrap()),
+            tv_ip_addr: Arc::new(Mutex::new(ip_addr)),
+            tv_mac_addr: Arc::new(Mutex::new(mac_addr)),
         }
     }
 
@@ -82,6 +65,9 @@ impl ShortServer {
                         disable_night_light().unwrap();
                     }
                     "/switch_to_monitor" => {
+                        thread::spawn(|| {
+                            switch_to_home();
+                        });
                         enable_night_light().unwrap();
                         set_internal_display();
                         self.sleep_tv();
@@ -107,6 +93,7 @@ impl ShortServer {
             let magic_p = MagicPacket::new(&mac);
             let res = magic_p.send();
             if let Ok(_) = res {
+                thread::sleep(time::Duration::from_millis(200));
                 connect_tv_adb(&ip);
                 thread::sleep(time::Duration::from_millis(200));
                 wakeup_tv_adb();

@@ -1,5 +1,10 @@
+use std::thread;
+
+use crate::adb::{capture_screen, connect_tv_adb};
 use crate::config::Config;
+use crate::constants::{APP_NAME, IDM_CAPTURE, IDM_EXIT, IDM_STARTUP, WM_USER_TRAYICON};
 use crate::explorer::kill_explorer;
+use crate::server::ShortServer;
 use crate::startup::Startup;
 use crate::trayicon::TrayIcon;
 use crate::utils::{check_error, get_window_ptr, set_window_ptr, CheckError};
@@ -8,8 +13,8 @@ use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
 use windows::core::PCWSTR;
 use windows::w;
-use windows::Win32::Foundation::{GetLastError, COLORREF, HWND, LPARAM, LRESULT, WPARAM};
-use windows::Win32::Graphics::Gdi::CreateSolidBrush;
+use windows::Win32::Foundation::{GetLastError, HWND, LPARAM, LRESULT, WPARAM};
+use windows::Win32::Graphics::Gdi::HBRUSH;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -19,15 +24,12 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WS_CAPTION, WS_EX_TOOLWINDOW,
 };
 
-pub const NAME: PCWSTR = w!("Window Switcher");
-pub const WM_USER_TRAYICON: u32 = 6000;
-pub const IDM_EXIT: u32 = 1;
-pub const IDM_STARTUP: u32 = 2;
-
-const BG_COLOR: COLORREF = COLORREF(0x4c4c4c);
-
 pub fn start(config: &Config) -> Result<()> {
     info!("start config={:?}", config);
+    let short = ShortServer::from_config(config);
+    thread::spawn(move || {
+        short.start_server();
+    });
     App::start(config)
 }
 
@@ -40,6 +42,7 @@ pub struct App {
     hwnd: HWND,
     trayicon: TrayIcon,
     startup: Startup,
+    config: Config,
 }
 
 impl App {
@@ -54,6 +57,7 @@ impl App {
             hwnd,
             trayicon,
             startup,
+            config: config.to_owned(),
         };
 
         app.set_trayicon()?;
@@ -90,8 +94,8 @@ impl App {
 
         let window_class = WNDCLASSW {
             hInstance: hinstance,
-            lpszClassName: NAME,
-            hbrBackground: unsafe { CreateSolidBrush(BG_COLOR) },
+            lpszClassName: APP_NAME,
+            hbrBackground: HBRUSH(0),
             lpfnWndProc: Some(App::window_proc),
             ..Default::default()
         };
@@ -104,7 +108,7 @@ impl App {
             CreateWindowExW(
                 WS_EX_TOOLWINDOW,
                 PCWSTR(atom as *mut u16),
-                NAME,
+                APP_NAME,
                 WINDOW_STYLE(0),
                 CW_USEDEFAULT,
                 CW_USEDEFAULT,
@@ -177,6 +181,13 @@ impl App {
                         IDM_STARTUP => {
                             let app = get_app(hwnd)?;
                             app.startup.toggle()?;
+                        }
+                        IDM_CAPTURE => {
+                            let app = get_app(hwnd)?;
+                            let ip = &app.config.tv_ip_addr.to_owned().into_inner();
+                            let dir = &app.config.screen_dir.to_owned().into_inner();
+                            connect_tv_adb(ip);
+                            capture_screen(dir);
                         }
                         _ => {}
                     }

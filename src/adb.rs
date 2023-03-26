@@ -1,13 +1,17 @@
-use std::process::{Command, Stdio};
+use std::{
+    fs,
+    process::{Command, Stdio},
+    time::SystemTime,
+};
 
-use crate::constants::KEYCODE_CEC_HDMI4;
+use crate::constants::{KEYCODE_CEC_HDMI4, KEYCODE_HOME, KEYCODE_SLEEP, KEYCODE_WAKEUP};
 
 pub fn wakeup_tv_adb() {
     Command::new("adb")
         .arg("shell")
         .arg("input")
         .arg("keyevent")
-        .arg("KEYCODE_WAKEUP")
+        .arg(KEYCODE_WAKEUP)
         .stdout(Stdio::piped())
         .output()
         .expect("Failed to wake up tv");
@@ -18,7 +22,7 @@ pub fn sleep_tv_adb() {
         .arg("shell")
         .arg("input")
         .arg("keyevent")
-        .arg("KEYCODE_SLEEP")
+        .arg(KEYCODE_SLEEP)
         .stdout(Stdio::piped())
         .output()
         .expect("Failed to sleep tv");
@@ -38,8 +42,38 @@ pub fn switch_to_port_4() {
         .arg("shell")
         .arg("input")
         .arg("keyevent")
-        .arg(format!("{:?}", KEYCODE_CEC_HDMI4))
+        .arg(KEYCODE_CEC_HDMI4.to_string())
         .stdout(Stdio::piped())
         .output()
         .expect("Failed to sleep tv");
+}
+
+pub fn switch_to_home() {
+    Command::new("adb")
+        .arg("shell")
+        .arg("input")
+        .arg("keyevent")
+        .arg(KEYCODE_HOME)
+        .stdout(Stdio::piped())
+        .output()
+        .expect("Failed to switch to home");
+}
+
+pub fn capture_screen(dir: &str) {
+    let time = std::time::SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let mut file_name = dir.to_string();
+    file_name.push_str(r"\");
+    file_name.push_str(&time.to_string());
+    file_name.push_str(".png");
+    let output = Command::new("adb")
+        .arg("exec-out")
+        .arg("screencap")
+        .arg("-p")
+        .output()
+        .expect("Failed to execute command");
+
+    fs::write(file_name, output.stdout).expect("Unable to write file");
 }

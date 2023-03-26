@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use windows::core::{Error, PCWSTR};
 use windows::Win32::Foundation::{
-    CloseHandle, SetLastError, BOOL, ERROR_ALREADY_EXISTS, ERROR_SUCCESS, HANDLE, HWND, LPARAM,
+    CloseHandle, SetLastError, BOOL, ERROR_ALREADY_EXISTS, ERROR_SUCCESS, HANDLE, HWND,
 };
 
 use windows::Win32::System::LibraryLoader::GetModuleFileNameW;

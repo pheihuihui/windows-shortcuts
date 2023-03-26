@@ -1,4 +1,6 @@
-use crate::app::{IDM_EXIT, IDM_STARTUP, NAME, WM_USER_TRAYICON};
+use crate::constants::{
+    APP_NAME, IDM_CAPTURE, IDM_EXIT, IDM_MONITOR, IDM_STARTUP, IDM_TV, WM_USER_TRAYICON,
+};
 
 use anyhow::{anyhow, Result};
 use windows::core::PCWSTR;
@@ -15,6 +17,9 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 const ICON_BYTES: &[u8] = include_bytes!("../windows.ico");
 const TEXT_STARTUP: PCWSTR = w!("Startup");
+const TEXT_CAPTURE: PCWSTR = w!("Capture Screen");
+const TEXT_S_TV: PCWSTR = w!("Switch to TV");
+const TEXT_S_MONOTOR: PCWSTR = w!("Switch to Monitor");
 const TEXT_EXIT: PCWSTR = w!("Exit");
 
 pub struct TrayIcon {
@@ -70,7 +75,7 @@ impl TrayIcon {
         let hicon =
             unsafe { CreateIconFromResourceEx(icon_data, true, 0x30000, 0, 0, LR_DEFAULTCOLOR) }
                 .expect("Failed to load icon resource");
-        let mut tooltip: Vec<u16> = unsafe { NAME.as_wide() }.to_vec();
+        let mut tooltip: Vec<u16> = unsafe { APP_NAME.as_wide() }.to_vec();
         tooltip.resize(128, 0);
         tooltip.pop();
         tooltip.push(0);
@@ -90,6 +95,9 @@ impl TrayIcon {
         unsafe {
             let hmenu = CreatePopupMenu().map_err(|err| anyhow!("Failed to create menu, {err}"))?;
             AppendMenuW(hmenu, startup_flags, IDM_STARTUP as usize, TEXT_STARTUP).ok()?;
+            AppendMenuW(hmenu, MF_STRING, IDM_CAPTURE as usize, TEXT_CAPTURE).ok()?;
+            AppendMenuW(hmenu, MF_STRING, IDM_TV as usize, TEXT_S_TV).ok()?;
+            AppendMenuW(hmenu, MF_STRING, IDM_MONITOR as usize, TEXT_S_MONOTOR).ok()?;
             AppendMenuW(hmenu, MF_STRING, IDM_EXIT as usize, TEXT_EXIT).ok()?;
             Ok(hmenu)
         }

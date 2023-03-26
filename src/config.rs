@@ -7,6 +7,7 @@ pub struct Config {
     pub tv_ip_addr: RefCell<String>,
     pub tv_mac_addr: RefCell<[u8; 6]>,
     pub server_port: RefCell<String>,
+    pub screen_dir: RefCell<String>,
 }
 
 impl Default for Config {
@@ -15,6 +16,7 @@ impl Default for Config {
             tv_ip_addr: RefCell::new("1.1.1.1".to_string()),
             tv_mac_addr: RefCell::new([1, 1, 1, 1, 1, 1]),
             server_port: RefCell::new("9111".to_string()),
+            screen_dir: RefCell::new("D:\\".to_string()),
         }
     }
 }
@@ -47,6 +49,13 @@ impl Config {
                     let arr = port_.split("::").collect::<Vec<&str>>();
                     if arr.len() == 2 {
                         *res.server_port.borrow_mut() = arr[1].to_owned();
+                    }
+                }
+                let l4 = lines.next();
+                if let Some(dir_) = l4 {
+                    let arr = dir_.split("::").collect::<Vec<&str>>();
+                    if arr.len() == 2 {
+                        *res.screen_dir.borrow_mut() = arr[1].to_owned();
                     }
                 }
             }
