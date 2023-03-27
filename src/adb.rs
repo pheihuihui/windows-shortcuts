@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::{
     fs,
     process::{Command, Stdio},
@@ -76,4 +78,13 @@ pub fn capture_screen(dir: &str) {
         .expect("Failed to execute command");
 
     fs::write(file_name, output.stdout).expect("Unable to write file");
+}
+
+pub fn reconnect_offline() {
+    Command::new("adb")
+        .arg("reconnect")
+        .arg("offline")
+        .stdout(Stdio::piped())
+        .output()
+        .expect("Failed to reconnect offline");
 }

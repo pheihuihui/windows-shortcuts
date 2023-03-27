@@ -10,6 +10,14 @@ use windows::Win32::System::Threading::{CreateMutexW, ReleaseMutex};
 use windows::Win32::UI::WindowsAndMessaging::GWL_USERDATA;
 
 use std::path::PathBuf;
+use std::thread;
+use std::time;
+
+use crate::adb::{connect_tv_adb, sleep_tv_adb, switch_to_home, switch_to_port_4, wakeup_tv_adb};
+use crate::constants::APP_CONFIG;
+use crate::magic_packet::MagicPacket;
+use crate::monitors::{set_external_display, set_internal_display};
+use crate::night_light::{disable_night_light, enable_night_light};
 
 pub const BUFFER_SIZE: usize = 1024;
 
@@ -155,4 +163,37 @@ pub fn parse_mac_addr(mac: &str) -> Result<[u8; 6], &str> {
         }
     }
     Ok(res)
+}
+
+pub fn switch_to_tv() {
+    let mac = APP_CONFIG.tv_mac_addr;
+    let ip = &APP_CONFIG.tv_ip_addr;
+    thread::spawn(move || {
+        let magic_p = MagicPacket::new(&mac);
+        let res = magic_p.send();
+        if let Ok(_) = res {
+            thread::sleep(time::Duration::from_millis(200));
+            connect_tv_adb(ip);
+            thread::sleep(time::Duration::from_millis(200));
+            wakeup_tv_adb();
+            thread::sleep(time::Duration::from_millis(200));
+            switch_to_port_4();
+            thread::sleep(time::Duration::from_millis(200));
+            set_external_display();
+            disable_night_light().unwrap();
+        }
+    });
+}
+
+pub fn switch_to_monitor() {
+    let ip = &APP_CONFIG.tv_ip_addr;
+    thread::spawn(move || {
+        connect_tv_adb(&ip);
+        thread::sleep(time::Duration::from_millis(200));
+        switch_to_home();
+        thread::sleep(time::Duration::from_millis(200));
+        enable_night_light().unwrap();
+        set_internal_display();
+        sleep_tv_adb();
+    });
 }

@@ -2,51 +2,48 @@ use std::thread;
 
 use crate::adb::{capture_screen, connect_tv_adb};
 use crate::config::Config;
-use crate::constants::{APP_NAME, IDM_CAPTURE, IDM_EXIT, IDM_STARTUP, WM_USER_TRAYICON};
+use crate::constants::{
+    APP_CONFIG, APP_NAME, IDM_CAPTURE, IDM_EXIT, IDM_MONITOR, IDM_STARTUP, IDM_TV,
+    S_U_TASKBAR_RESTART, WM_USER_TRAYICON,
+};
 use crate::explorer::kill_explorer;
 use crate::server::ShortServer;
 use crate::startup::Startup;
 use crate::trayicon::TrayIcon;
-use crate::utils::{check_error, get_window_ptr, set_window_ptr, CheckError};
+use crate::utils::{
+    check_error, get_window_ptr, set_window_ptr, switch_to_monitor, switch_to_tv, CheckError,
+};
 
 use anyhow::{anyhow, Result};
-use once_cell::sync::Lazy;
 use windows::core::PCWSTR;
-use windows::w;
 use windows::Win32::Foundation::{GetLastError, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::HBRUSH;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, GetWindowLongPtrW,
-    PostQuitMessage, RegisterClassW, RegisterWindowMessageW, SetWindowLongPtrW, TranslateMessage,
-    CW_USEDEFAULT, GWL_STYLE, MSG, WINDOW_STYLE, WM_COMMAND, WM_LBUTTONUP, WM_RBUTTONUP, WNDCLASSW,
-    WS_CAPTION, WS_EX_TOOLWINDOW,
+    PostQuitMessage, RegisterClassW, SetWindowLongPtrW, TranslateMessage, CW_USEDEFAULT, GWL_STYLE,
+    MSG, WINDOW_STYLE, WM_COMMAND, WM_LBUTTONUP, WM_RBUTTONUP, WNDCLASSW, WS_CAPTION,
+    WS_EX_TOOLWINDOW,
 };
 
 pub fn start(config: &Config) -> Result<()> {
     info!("start config={:?}", config);
-    let short = ShortServer::from_config(config);
+    let short = ShortServer::from_config();
     thread::spawn(move || {
         short.start_server();
     });
-    App::start(config)
+    App::start()
 }
-
-/// When the taskbar is created, it registers a message with the "TaskbarCreated" string and then broadcasts this message to all top-level windows
-/// When the application receives this message, it should assume that any taskbar icons it added have been removed and add them again.
-static S_U_TASKBAR_RESTART: Lazy<u32> =
-    Lazy::new(|| unsafe { RegisterWindowMessageW(w!("TaskbarCreated")) });
 
 pub struct App {
     hwnd: HWND,
     trayicon: TrayIcon,
     startup: Startup,
-    config: Config,
 }
 
 impl App {
-    pub fn start(config: &Config) -> Result<()> {
+    pub fn start() -> Result<()> {
         let hwnd = Self::create_window()?;
 
         let trayicon = TrayIcon::create();
@@ -57,7 +54,6 @@ impl App {
             hwnd,
             trayicon,
             startup,
-            config: config.to_owned(),
         };
 
         app.set_trayicon()?;
@@ -183,12 +179,13 @@ impl App {
                             app.startup.toggle()?;
                         }
                         IDM_CAPTURE => {
-                            let app = get_app(hwnd)?;
-                            let ip = &app.config.tv_ip_addr.to_owned().into_inner();
-                            let dir = &app.config.screen_dir.to_owned().into_inner();
-                            connect_tv_adb(ip);
-                            capture_screen(dir);
+                            let ip = APP_CONFIG.tv_ip_addr.to_owned();
+                            let dir = APP_CONFIG.screen_dir.to_owned();
+                            connect_tv_adb(&ip);
+                            capture_screen(&dir);
                         }
+                        IDM_TV => switch_to_tv(),
+                        IDM_MONITOR => switch_to_monitor(),
                         _ => {}
                     }
                 }

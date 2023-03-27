@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 
-use windows::{core::PCWSTR, w};
+use once_cell::sync::Lazy;
+use windows::{core::PCWSTR, w, Win32::UI::WindowsAndMessaging::RegisterWindowMessageW};
+
+use crate::Config;
 
 pub const APP_NAME: PCWSTR = w!("Windows Shortcuts");
 pub const WM_USER_TRAYICON: u32 = 6000;
@@ -20,4 +23,9 @@ pub const KEYCODE_CEC_HDMI4: i16 = 246;
 
 pub const CONFIG_FILE: &str = "config.txt";
 
-// adb shell input keyevent 82
+/// When the taskbar is created, it registers a message with the "TaskbarCreated" string and then broadcasts this message to all top-level windows
+/// When the application receives this message, it should assume that any taskbar icons it added have been removed and add them again.
+pub static S_U_TASKBAR_RESTART: Lazy<u32> =
+    Lazy::new(|| unsafe { RegisterWindowMessageW(w!("TaskbarCreated")) });
+
+pub static APP_CONFIG: Lazy<Config> = Lazy::new(|| Config::load(CONFIG_FILE).unwrap());
