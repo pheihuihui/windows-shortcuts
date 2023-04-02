@@ -13,7 +13,10 @@ use std::path::PathBuf;
 use std::thread;
 use std::time;
 
-use crate::adb::{connect_tv_adb, sleep_tv_adb, switch_to_home, switch_to_port_4, wakeup_tv_adb};
+use crate::adb::{
+    capture_screen_adb, connect_tv_adb, sleep_tv_adb, switch_to_home, switch_to_port_4,
+    wakeup_tv_adb,
+};
 use crate::constants::APP_CONFIG;
 use crate::magic_packet::MagicPacket;
 use crate::monitors::{set_external_display, set_internal_display};
@@ -165,6 +168,25 @@ pub fn parse_mac_addr(mac: &str) -> Result<[u8; 6], &str> {
     Ok(res)
 }
 
+pub fn parse_ip_addr(mac: &str) -> Result<[u8; 4], &str> {
+    let arr = mac.split(".").collect::<Vec<&str>>();
+    let mut res: [u8; 4] = [0; 4];
+    if arr.len() != 4 {
+        return Err("failed 1");
+    }
+    for u in 0..4 {
+        match u8::from_str_radix(arr[u], 10) {
+            Ok(val) => {
+                res[u] = val;
+            }
+            Err(_) => {
+                return Err("failed 2");
+            }
+        }
+    }
+    Ok(res)
+}
+
 pub fn switch_to_tv() {
     let mac = APP_CONFIG.tv_mac_addr;
     let ip = &APP_CONFIG.tv_ip_addr;
@@ -172,7 +194,7 @@ pub fn switch_to_tv() {
         let magic_p = MagicPacket::new(&mac);
         let res = magic_p.send();
         if let Ok(_) = res {
-            thread::sleep(time::Duration::from_millis(200));
+            thread::sleep(time::Duration::from_millis(1000));
             connect_tv_adb(ip);
             thread::sleep(time::Duration::from_millis(200));
             wakeup_tv_adb();
@@ -196,4 +218,11 @@ pub fn switch_to_monitor() {
         set_internal_display();
         sleep_tv_adb();
     });
+}
+
+pub fn capture_screen() {
+    let ip = APP_CONFIG.tv_ip_addr.to_owned();
+    let dir = APP_CONFIG.screen_dir.to_owned();
+    connect_tv_adb(&ip);
+    capture_screen_adb(&dir);
 }

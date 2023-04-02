@@ -61,7 +61,7 @@ pub fn switch_to_home() {
         .expect("Failed to switch to home");
 }
 
-pub fn capture_screen(dir: &str) {
+pub fn capture_screen_adb(dir: &str) {
     let time = std::time::SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()

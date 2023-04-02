@@ -18,5 +18,5 @@ pub mod macros;
 #[macro_use]
 extern crate log;
 
-pub use crate::app::start;
+pub use crate::app::start_app;
 pub use crate::config::Config;

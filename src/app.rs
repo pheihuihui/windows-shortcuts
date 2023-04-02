@@ -1,7 +1,6 @@
 use std::thread;
 
-use crate::adb::{capture_screen, connect_tv_adb};
-use crate::config::Config;
+use crate::adb::{capture_screen_adb, connect_tv_adb};
 use crate::constants::{
     APP_CONFIG, APP_NAME, IDM_CAPTURE, IDM_EXIT, IDM_MONITOR, IDM_STARTUP, IDM_TV,
     S_U_TASKBAR_RESTART, WM_USER_TRAYICON,
@@ -27,8 +26,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WS_EX_TOOLWINDOW,
 };
 
-pub fn start(config: &Config) -> Result<()> {
-    info!("start config={:?}", config);
+pub fn start_app() -> Result<()> {
     let short = ShortServer::from_config();
     thread::spawn(move || {
         short.start_server();
@@ -182,7 +180,7 @@ impl App {
                             let ip = APP_CONFIG.tv_ip_addr.to_owned();
                             let dir = APP_CONFIG.screen_dir.to_owned();
                             connect_tv_adb(&ip);
-                            capture_screen(&dir);
+                            capture_screen_adb(&dir);
                         }
                         IDM_TV => switch_to_tv(),
                         IDM_MONITOR => switch_to_monitor(),

@@ -21,11 +21,9 @@ pub const KEYCODE_CEC_HDMI2: i16 = 244;
 pub const KEYCODE_CEC_HDMI3: i16 = 245;
 pub const KEYCODE_CEC_HDMI4: i16 = 246;
 
-pub const CONFIG_FILE: &str = "config.txt";
-
 /// When the taskbar is created, it registers a message with the "TaskbarCreated" string and then broadcasts this message to all top-level windows
 /// When the application receives this message, it should assume that any taskbar icons it added have been removed and add them again.
 pub static S_U_TASKBAR_RESTART: Lazy<u32> =
     Lazy::new(|| unsafe { RegisterWindowMessageW(w!("TaskbarCreated")) });
 
-pub static APP_CONFIG: Lazy<Config> = Lazy::new(|| Config::load(CONFIG_FILE).unwrap());
+pub static APP_CONFIG: Lazy<Config> = Lazy::new(|| Config::load("config.txt").unwrap());
