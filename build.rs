@@ -9,7 +9,7 @@ macro_rules! build_print {
 }
 
 fn main() {
-    embed_resource::compile("hdpi_plotting.rc");
+    embed_resource::compile("hdpi_plotting.rc", embed_resource::NONE);
 
     let src_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let src_dir = Path::new(&src_dir);
@@ -18,20 +18,13 @@ fn main() {
     if profile == "release" {
         let release_dir = src_dir.join("target").join("release");
         if release_dir.exists() {
-            let ico = release_dir.join("windows.ico");
-            let src_ico = src_dir.join("windows.ico");
-            let config = release_dir.join("config.txt");
-            let src_config = src_dir.join("config.txt");
-            fs::copy(
-                src_config.as_path().display().to_string(),
-                config.as_path().display().to_string(),
-            )
-            .unwrap();
-            fs::copy(
-                src_ico.as_path().display().to_string(),
-                ico.as_path().display().to_string(),
-            )
-            .unwrap();
+            let config = release_dir
+                .join("config.txt")
+                .as_path()
+                .display()
+                .to_string();
+            let src_config = src_dir.join("config.txt").as_path().display().to_string();
+            fs::copy(src_config, config).unwrap();
         }
     }
 }

@@ -139,7 +139,7 @@ impl App {
         match Self::handle_message(hwnd, msg, wparam, lparam) {
             Ok(ret) => ret,
             Err(err) => {
-                error!("{err}");
+                println!("{:?}", err);
                 DefWindowProcW(hwnd, msg, wparam, lparam)
             }
         }

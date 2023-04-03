@@ -56,7 +56,7 @@ impl Config {
                     }
                 }
             }
-            Err(_) => error!("failed to read config file"),
+            Err(_) => println!("failed to read config file"),
         }
 
         Ok(res)

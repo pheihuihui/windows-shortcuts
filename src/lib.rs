@@ -4,6 +4,7 @@ mod config;
 pub mod constants;
 mod explorer;
 mod inputs;
+pub mod macros;
 mod magic_packet;
 mod monitors;
 mod night_light;
@@ -11,12 +12,6 @@ mod registry;
 mod server;
 mod startup;
 mod trayicon;
-
 pub mod utils;
-// #[macro_use]
-pub mod macros;
-#[macro_use]
-extern crate log;
-
 pub use crate::app::start_app;
 pub use crate::config::Config;
