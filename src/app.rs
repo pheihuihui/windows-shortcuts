@@ -13,7 +13,6 @@ use crate::utils::{
     check_error, get_window_ptr, set_window_ptr, switch_to_monitor, switch_to_tv, CheckError,
 };
 
-use anyhow::{anyhow, Result};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{GetLastError, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::HBRUSH;
@@ -26,7 +25,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WS_EX_TOOLWINDOW,
 };
 
-pub fn start_app() -> Result<()> {
+pub fn start_app() -> Result<(), String> {
     let short = ShortServer::from_config();
     thread::spawn(move || {
         short.start_server();
@@ -41,7 +40,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn start() -> Result<()> {
+    pub fn start() -> Result<(), String> {
         let hwnd = Self::create_window()?;
 
         let trayicon = TrayIcon::create();
@@ -58,18 +57,18 @@ impl App {
 
         let app_ptr = Box::into_raw(Box::new(app)) as _;
         check_error(|| set_window_ptr(hwnd, app_ptr))
-            .map_err(|err| anyhow!("Failed to set window ptr, {err}"))?;
+            .map_err(|err| format!("Failed to set window ptr, {err}"))?;
 
         Self::eventloop()
     }
 
-    fn eventloop() -> Result<()> {
+    fn eventloop() -> Result<(), String> {
         let mut message = MSG::default();
         loop {
             let ret = unsafe { GetMessageW(&mut message, HWND(0), 0, 0) };
             match ret.0 {
                 -1 => {
-                    unsafe { GetLastError() }.ok()?;
+                    unsafe { GetLastError() };
                 }
                 0 => break,
                 _ => unsafe {
@@ -82,9 +81,9 @@ impl App {
         Ok(())
     }
 
-    fn create_window() -> Result<HWND> {
+    fn create_window() -> Result<HWND, String> {
         let hinstance = unsafe { GetModuleHandleW(None) }
-            .map_err(|err| anyhow!("Failed to get current module handle, {err}"))?;
+            .map_err(|err| format!("Failed to get current module handle, {err}"))?;
 
         let window_class = WNDCLASSW {
             hInstance: hinstance,
@@ -96,7 +95,7 @@ impl App {
 
         let atom = unsafe { RegisterClassW(&window_class) }
             .check_error()
-            .map_err(|err| anyhow!("Failed to register class, {err}"))?;
+            .map_err(|err| format!("Failed to register class, {err}"))?;
 
         let hwnd = unsafe {
             CreateWindowExW(
@@ -115,7 +114,7 @@ impl App {
             )
         }
         .check_error()
-        .map_err(|err| anyhow!("Failed to create windows, {err}"))?;
+        .map_err(|err| format!("Failed to create windows, {err}"))?;
 
         // hide caption
         let mut style = unsafe { GetWindowLongPtrW(hwnd, GWL_STYLE) } as u32;
@@ -125,7 +124,7 @@ impl App {
         Ok(hwnd)
     }
 
-    fn set_trayicon(&mut self) -> Result<()> {
+    fn set_trayicon(&mut self) -> Result<(), String> {
         self.trayicon.register(self.hwnd)?;
         Ok(())
     }
@@ -145,7 +144,12 @@ impl App {
         }
     }
 
-    fn handle_message(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> Result<LRESULT> {
+    fn handle_message(
+        hwnd: HWND,
+        msg: u32,
+        wparam: WPARAM,
+        lparam: LPARAM,
+    ) -> Result<LRESULT, String> {
         match msg {
             WM_USER_TRAYICON => {
                 let app = get_app(hwnd)?;
@@ -198,10 +202,10 @@ impl App {
     }
 }
 
-fn get_app(hwnd: HWND) -> Result<&'static mut App> {
+fn get_app(hwnd: HWND) -> Result<&'static mut App, String> {
     unsafe {
         let ptr = check_error(|| get_window_ptr(hwnd))
-            .map_err(|err| anyhow!("Failed to get window ptr, {err}"))?;
+            .map_err(|err| format!("Failed to get window ptr, {err}"))?;
         let tx: &mut App = &mut *(ptr as *mut _);
         Ok(tx)
     }

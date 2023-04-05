@@ -1,4 +1,3 @@
-use anyhow::{anyhow, Result};
 use windows::core::{Error, PCWSTR};
 use windows::Win32::Foundation::{
     CloseHandle, SetLastError, BOOL, ERROR_ALREADY_EXISTS, ERROR_SUCCESS, HANDLE, HWND,
@@ -24,11 +23,11 @@ use crate::night_light::{disable_night_light, enable_night_light};
 
 pub const BUFFER_SIZE: usize = 1024;
 
-pub fn get_exe_folder() -> Result<PathBuf> {
+pub fn get_exe_folder() -> Result<PathBuf, String> {
     let path =
-        std::env::current_exe().map_err(|err| anyhow!("Failed to get binary path, {err}"))?;
+        std::env::current_exe().map_err(|err| format!("Failed to get binary path, {err}"))?;
     path.parent()
-        .ok_or_else(|| anyhow!("Failed to get binary folder"))
+        .ok_or_else(|| format!("Failed to get binary folder"))
         .map(|v| v.to_path_buf())
 }
 
@@ -119,10 +118,10 @@ unsafe impl Sync for SingleInstance {}
 
 impl SingleInstance {
     /// Returns a new SingleInstance object.
-    pub fn create(name: &str) -> Result<Self> {
+    pub fn create(name: &str) -> Result<Self, String> {
         let name = to_wstring(name);
         let handle = unsafe { CreateMutexW(None, BOOL(1), PCWSTR(name.as_ptr())) }
-            .map_err(|err| anyhow!("Fail to setup single instance, {err}"))?;
+            .map_err(|err| format!("Fail to setup single instance, {err}"))?;
         let handle =
             if windows::core::Error::from_win32().code() == ERROR_ALREADY_EXISTS.to_hresult() {
                 None
@@ -149,11 +148,11 @@ impl Drop for SingleInstance {
     }
 }
 
-pub fn parse_mac_addr(mac: &str) -> Result<[u8; 6], &str> {
+pub fn parse_mac_addr(mac: &str) -> Result<[u8; 6], String> {
     let arr = mac.split(":").collect::<Vec<&str>>();
     let mut res: [u8; 6] = [0; 6];
     if arr.len() != 6 {
-        return Err("failed 1");
+        return Err("failed 1".to_string());
     }
     for u in 0..6 {
         match u8::from_str_radix(arr[u], 16) {
@@ -161,18 +160,18 @@ pub fn parse_mac_addr(mac: &str) -> Result<[u8; 6], &str> {
                 res[u] = val;
             }
             Err(_) => {
-                return Err("failed 2");
+                return Err("failed 2".to_string());
             }
         }
     }
     Ok(res)
 }
 
-pub fn parse_ip_addr(mac: &str) -> Result<[u8; 4], &str> {
+pub fn parse_ip_addr(mac: &str) -> Result<[u8; 4], String> {
     let arr = mac.split(".").collect::<Vec<&str>>();
     let mut res: [u8; 4] = [0; 4];
     if arr.len() != 4 {
-        return Err("failed 1");
+        return Err("failed 1".to_string());
     }
     for u in 0..4 {
         match u8::from_str_radix(arr[u], 10) {
@@ -180,7 +179,7 @@ pub fn parse_ip_addr(mac: &str) -> Result<[u8; 4], &str> {
                 res[u] = val;
             }
             Err(_) => {
-                return Err("failed 2");
+                return Err("failed 2".to_string());
             }
         }
     }

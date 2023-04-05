@@ -1,5 +1,3 @@
-use anyhow::{bail, Result};
-
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{ERROR_FILE_NOT_FOUND, ERROR_SUCCESS};
 use windows::Win32::System::Registry::{
@@ -19,7 +17,7 @@ impl Drop for WrapHKey {
     }
 }
 
-pub fn get_key(name: PCWSTR) -> Result<WrapHKey> {
+pub fn get_key(name: PCWSTR) -> Result<WrapHKey, String> {
     let mut hkey = HKEY::default();
     let ret = unsafe {
         RegOpenKeyExW(
@@ -31,12 +29,13 @@ pub fn get_key(name: PCWSTR) -> Result<WrapHKey> {
         )
     };
     if ret != ERROR_SUCCESS {
-        bail!("Fail to open reg key, {:?}", ret);
+        let err = format!("Fail to open reg key, {:?}", ret);
+        return Err(err);
     }
     Ok(WrapHKey { hkey })
 }
 
-pub fn get_value(hkey: &HKEY, val_name: PCWSTR) -> Result<Option<Vec<u16>>> {
+pub fn get_value(hkey: &HKEY, val_name: PCWSTR) -> Result<Option<Vec<u16>>, String> {
     let mut buffer: [u16; BUFFER_SIZE] = [0; BUFFER_SIZE];
     let mut size = (BUFFER_SIZE * std::mem::size_of_val(&buffer[0])) as u32;
     let mut kind: REG_VALUE_TYPE = Default::default();
@@ -55,7 +54,8 @@ pub fn get_value(hkey: &HKEY, val_name: PCWSTR) -> Result<Option<Vec<u16>>> {
         if ret == ERROR_FILE_NOT_FOUND {
             return Ok(None);
         }
-        bail!("Fail to get reg value, {:?}", ret);
+        let err = format!("Fail to get reg value, {:?}", ret);
+        return Err(err);
     }
     let len = (size as usize - 1) / 2;
     Ok(Some(buffer[..len].to_vec()))

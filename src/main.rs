@@ -1,7 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use anyhow::{bail, Result};
-
 use windows_shortcuts::{alert, start_app, utils::SingleInstance};
 
 fn main() {
@@ -11,10 +9,10 @@ fn main() {
     }
 }
 
-fn run() -> Result<()> {
+fn run() -> Result<(), String> {
     let instance = SingleInstance::create("WindowSwitcherMutex")?;
     if !instance.is_single() {
-        bail!("Another instance is running. This instance will abort.")
+        return Err("Another instance is running. This instance will abort.".to_string());
     }
     start_app()
 }

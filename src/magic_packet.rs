@@ -33,7 +33,7 @@ impl MagicPacket {
         MagicPacket { magic_bytes }
     }
 
-    #[allow(dead_code)]
+    #[allow(unused)]
     pub fn print_sth(&self) {
         println!("{:?}", self.magic_bytes);
     }

@@ -88,8 +88,32 @@ pub fn disable_night_light() -> io::Result<()> {
     Ok(())
 }
 
-#[allow(dead_code)]
+#[allow(unused)]
 pub fn reset_night_light() -> io::Result<()> {
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+
+    let (settings, disp) = hkcu.create_subkey(SUBKEY)?;
+
+    match disp {
+        REG_CREATED_NEW_KEY => {}
+        REG_OPENED_EXISTING_KEY => {
+            let new_vec = vec![
+                67u8, 66, 1, 0, 10, 2, 1, 0, 42, 6, 248, 203, 136, 160, 6, 42, 43, 14, 19, 67, 66,
+                1, 0, 208, 10, 2, 198, 20, 131, 248, 221, 159, 138, 190, 211, 236, 1, 0, 0, 0, 0,
+            ];
+            let newval = RegValue {
+                vtype: REG_BINARY,
+                bytes: new_vec,
+            };
+            return settings.set_raw_value("Data", &newval);
+        }
+    }
+
+    Ok(())
+}
+
+#[allow(unused)]
+pub fn reset_night_light2() -> io::Result<()> {
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
 
     let (settings, disp) = hkcu.create_subkey(SUBKEY)?;

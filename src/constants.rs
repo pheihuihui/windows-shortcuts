@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(unused)]
 
 use once_cell::sync::Lazy;
 use windows::{core::PCWSTR, w, Win32::UI::WindowsAndMessaging::RegisterWindowMessageW};
