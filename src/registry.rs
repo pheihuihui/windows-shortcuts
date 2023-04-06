@@ -1,8 +1,8 @@
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{ERROR_FILE_NOT_FOUND, ERROR_SUCCESS};
 use windows::Win32::System::Registry::{
-    RegCloseKey, RegGetValueW, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER, KEY_ALL_ACCESS,
-    REG_VALUE_TYPE, RRF_RT_REG_SZ,
+    RegCloseKey, RegGetValueW, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER, KEY_ALL_ACCESS, REG_BINARY,
+    REG_VALUE_TYPE, RRF_RT_REG_BINARY, RRF_RT_REG_SZ,
 };
 
 use crate::utils::BUFFER_SIZE;
@@ -59,4 +59,29 @@ pub fn get_value(hkey: &HKEY, val_name: PCWSTR) -> Result<Option<Vec<u16>>, Stri
     }
     let len = (size as usize - 1) / 2;
     Ok(Some(buffer[..len].to_vec()))
+}
+
+pub fn get_raw_value(hkey: &HKEY, val_name: PCWSTR) -> Result<Option<Vec<u8>>, String> {
+    let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
+    let mut size = (BUFFER_SIZE * std::mem::size_of_val(&buffer[0])) as u32;
+    let mut kind: REG_VALUE_TYPE = REG_BINARY;
+    let ret = unsafe {
+        RegGetValueW(
+            *hkey,
+            None,
+            val_name,
+            RRF_RT_REG_BINARY,
+            Some(&mut kind),
+            Some(buffer.as_mut_ptr() as *mut _),
+            Some(&mut size),
+        )
+    };
+    if ret != ERROR_SUCCESS {
+        if ret == ERROR_FILE_NOT_FOUND {
+            return Ok(None);
+        }
+        let err = format!("Fail to get reg value, {:?}", ret);
+        return Err(err);
+    }
+    Ok(Some(buffer[..size as usize].to_vec()))
 }
