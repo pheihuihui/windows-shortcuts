@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::utils::{parse_ip_addr, parse_mac_addr};
+use crate::utils::others::{parse_ip_addr, parse_mac_addr};
 
 const KEY_TV_IP: &str = "TV_IP";
 const KEY_TV_MAC: &str = "TV_MAC";

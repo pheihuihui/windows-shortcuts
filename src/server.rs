@@ -6,8 +6,8 @@ use std::{
 
 use crate::{
     constants::APP_CONFIG,
-    inputs::switch_windows,
-    utils::{capture_screen, switch_to_monitor, switch_to_tv},
+    utils::inputs::switch_windows,
+    utils::others::{capture_screen, switch_to_monitor, switch_to_tv},
 };
 
 pub struct ShortServer {

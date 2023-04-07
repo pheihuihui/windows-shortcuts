@@ -5,7 +5,8 @@ use windows::Win32::System::Registry::{
     REG_VALUE_TYPE, RRF_RT_REG_BINARY, RRF_RT_REG_SZ,
 };
 
-use crate::utils::BUFFER_SIZE;
+use super::others::BUFFER_SIZE;
+
 
 pub struct WrapHKey {
     pub hkey: HKEY,

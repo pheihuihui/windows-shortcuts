@@ -6,8 +6,8 @@ use windows::Win32::Foundation::ERROR_SUCCESS;
 use windows::Win32::System::Registry::RegSetValueExW;
 use windows::Win32::System::Registry::REG_BINARY;
 
-use crate::registry::get_key;
-use crate::registry::get_raw_value;
+use crate::utils::registry::get_key;
+use crate::utils::registry::get_raw_value;
 
 const HKEY_NIGHT_LIGHT: PCWSTR = w!(
     r"SOFTWARE\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.bluelightreduction.bluelightreductionstate\windows.data.bluelightreduction.bluelightreductionstate"
@@ -90,7 +90,7 @@ pub fn disable_night_light() -> Result<(), String> {
 }
 
 #[allow(unused)]
-pub fn reset_night_light2() -> Result<(), String> {
+pub fn reset_night_light() -> Result<(), String> {
     let key = get_key(HKEY_NIGHT_LIGHT)?;
     let new_vec = vec![
         67u8, 66, 1, 0, 10, 2, 1, 0, 42, 6, 248, 203, 136, 160, 6, 42, 43, 14, 19, 67, 66, 1, 0,

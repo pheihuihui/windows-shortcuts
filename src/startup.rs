@@ -3,8 +3,8 @@ use windows::w;
 use windows::Win32::Foundation::ERROR_SUCCESS;
 use windows::Win32::System::Registry::{RegDeleteValueW, RegSetValueExW, REG_SZ};
 
-use crate::registry::{get_key, get_value};
-use crate::utils::get_exe_path;
+use crate::utils::others::get_exe_path;
+use crate::utils::registry::{get_key, get_value};
 
 const HKEY_RUN: PCWSTR = w!(r"Software\Microsoft\Windows\CurrentVersion\Run");
 const HKEY_NAME: PCWSTR = w!("Windows Shortcuts");

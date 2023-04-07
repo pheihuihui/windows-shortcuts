@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use windows_shortcuts::{alert, start_app, utils::SingleInstance};
+use windows_shortcuts::{alert, app::start_app, utils::instance::SingleInstance};
 
 fn main() {
     if let Err(err) = run() {

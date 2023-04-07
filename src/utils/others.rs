@@ -1,13 +1,7 @@
-use windows::core::{Error, PCWSTR};
-use windows::Win32::Foundation::{
-    CloseHandle, SetLastError, BOOL, ERROR_ALREADY_EXISTS, ERROR_SUCCESS, HANDLE, HWND,
-};
-use windows::Win32::UI::HiDpi::{
-    SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
-};
+use windows::core::Error;
+use windows::Win32::Foundation::{SetLastError, ERROR_SUCCESS, HANDLE, HWND};
 
 use windows::Win32::System::LibraryLoader::GetModuleFileNameW;
-use windows::Win32::System::Threading::{CreateMutexW, ReleaseMutex};
 
 use windows::Win32::UI::WindowsAndMessaging::GWL_USERDATA;
 
@@ -15,14 +9,14 @@ use std::path::PathBuf;
 use std::thread;
 use std::time;
 
-use crate::adb::{
+use crate::constants::APP_CONFIG;
+use crate::utils::adb::{
     capture_screen_adb, connect_tv_adb, sleep_tv_adb, switch_to_home, switch_to_port_4,
     wakeup_tv_adb,
 };
-use crate::constants::APP_CONFIG;
-use crate::magic_packet::MagicPacket;
-use crate::monitors::{set_external_display, set_internal_display};
-use crate::night_light::{disable_night_light, enable_night_light};
+use crate::utils::magic_packet::MagicPacket;
+use crate::utils::monitors::{set_external_display, set_internal_display};
+use crate::utils::night_light::{disable_night_light, enable_night_light};
 
 pub const BUFFER_SIZE: usize = 1024;
 
@@ -109,49 +103,6 @@ impl CheckError for u16 {
 
 pub fn to_wstring(value: &str) -> Vec<u16> {
     value.encode_utf16().chain(Some(0)).collect::<Vec<u16>>()
-}
-
-/// A struct representing one running instance.
-pub struct SingleInstance {
-    handle: Option<HANDLE>,
-}
-
-unsafe impl Send for SingleInstance {}
-unsafe impl Sync for SingleInstance {}
-
-impl SingleInstance {
-    /// Returns a new SingleInstance object.
-    pub fn create(name: &str) -> Result<Self, String> {
-        unsafe {
-            SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-        }
-        let name = to_wstring(name);
-        let handle = unsafe { CreateMutexW(None, BOOL(1), PCWSTR(name.as_ptr())) }
-            .map_err(|err| format!("Fail to setup single instance, {err}"))?;
-        let handle =
-            if windows::core::Error::from_win32().code() == ERROR_ALREADY_EXISTS.to_hresult() {
-                None
-            } else {
-                Some(handle)
-            };
-        Ok(SingleInstance { handle })
-    }
-
-    /// Returns whether this instance is single.
-    pub fn is_single(&self) -> bool {
-        self.handle.is_some()
-    }
-}
-
-impl Drop for SingleInstance {
-    fn drop(&mut self) {
-        if let Some(handle) = self.handle.take() {
-            unsafe {
-                ReleaseMutex(handle);
-                CloseHandle(handle);
-            }
-        }
-    }
 }
 
 pub fn parse_mac_addr(mac: &str) -> Result<[u8; 6], String> {

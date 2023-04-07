@@ -1,15 +1,15 @@
 use std::thread;
 
-use crate::adb::{capture_screen_adb, connect_tv_adb};
 use crate::constants::{
     APP_CONFIG, APP_NAME, IDM_CAPTURE, IDM_EXIT, IDM_MONITOR, IDM_STARTUP, IDM_TV,
     S_U_TASKBAR_RESTART, WM_USER_TRAYICON,
 };
-use crate::explorer::kill_explorer;
 use crate::server::ShortServer;
 use crate::startup::Startup;
 use crate::trayicon::TrayIcon;
-use crate::utils::{
+use crate::utils::adb::{capture_screen_adb, connect_tv_adb};
+use crate::utils::explorer::kill_explorer;
+use crate::utils::others::{
     check_error, get_window_ptr, set_window_ptr, switch_to_monitor, switch_to_tv, CheckError,
 };
 
@@ -17,7 +17,6 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::{GetLastError, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::HBRUSH;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, GetWindowLongPtrW,
     PostQuitMessage, RegisterClassW, SetWindowLongPtrW, TranslateMessage, CW_USEDEFAULT, GWL_STYLE,

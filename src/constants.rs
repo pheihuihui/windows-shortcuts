@@ -3,7 +3,7 @@
 use once_cell::sync::Lazy;
 use windows::{core::PCWSTR, w, Win32::UI::WindowsAndMessaging::RegisterWindowMessageW};
 
-use crate::Config;
+use crate::config::Config;
 
 pub const APP_NAME: PCWSTR = w!("Windows Shortcuts");
 pub const WM_USER_TRAYICON: u32 = 6000;
