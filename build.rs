@@ -1,4 +1,3 @@
-extern crate embed_resource;
 use std::{env, fs, path::Path};
 
 #[allow(unused_macros)]
@@ -9,8 +8,6 @@ macro_rules! build_print {
 }
 
 fn main() {
-    embed_resource::compile("hdpi_plotting.rc", embed_resource::NONE);
-
     let src_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let src_dir = Path::new(&src_dir);
     let profile = env::var("PROFILE").unwrap();
