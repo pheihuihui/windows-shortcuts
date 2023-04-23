@@ -1,8 +1,5 @@
-use windows::core::Error;
-use windows::Win32::Foundation::{SetLastError, ERROR_SUCCESS, HANDLE, HWND};
-
+use windows::Win32::Foundation::HWND;
 use windows::Win32::System::LibraryLoader::GetModuleFileNameW;
-
 use windows::Win32::UI::WindowsAndMessaging::GWL_USERDATA;
 
 use std::path::PathBuf;
@@ -42,63 +39,6 @@ pub fn get_window_ptr(hwnd: HWND) -> isize {
 #[cfg(target_arch = "x86_64")]
 pub fn set_window_ptr(hwnd: HWND, ptr: isize) -> isize {
     unsafe { windows::Win32::UI::WindowsAndMessaging::SetWindowLongPtrW(hwnd, GWL_USERDATA, ptr) }
-}
-
-#[inline]
-/// Use to wrap fallible Win32 functions.
-/// First calls SetLastError(0).
-/// And then after checks GetLastError().
-/// Useful when the return value doesn't reliably indicate failure.
-pub fn check_error<F, R>(mut f: F) -> windows::core::Result<R>
-where
-    F: FnMut() -> R,
-{
-    unsafe {
-        SetLastError(ERROR_SUCCESS);
-        let result = f();
-        let error = Error::from_win32();
-        if error == Error::OK {
-            Ok(result)
-        } else {
-            Err(error)
-        }
-    }
-}
-
-pub trait CheckError: Sized {
-    fn check_error(self) -> windows::core::Result<Self>;
-}
-
-impl CheckError for HANDLE {
-    fn check_error(self) -> windows::core::Result<Self> {
-        if self.is_invalid() {
-            Err(Error::from_win32())
-        } else {
-            Ok(self)
-        }
-    }
-}
-
-impl CheckError for HWND {
-    fn check_error(self) -> windows::core::Result<Self> {
-        // If the function fails, the return value is NULL.
-        if self.0 == 0 {
-            Err(Error::from_win32())
-        } else {
-            Ok(self)
-        }
-    }
-}
-
-impl CheckError for u16 {
-    fn check_error(self) -> windows::core::Result<Self> {
-        // If the function fails, the return value is zero
-        if self == 0 {
-            Err(Error::from_win32())
-        } else {
-            Ok(self)
-        }
-    }
 }
 
 pub fn to_wstring(value: &str) -> Vec<u16> {

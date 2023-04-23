@@ -1,5 +1,6 @@
 use std::thread;
 
+use crate::alert;
 use crate::constants::{
     APP_CONFIG, APP_NAME, IDM_CAPTURE, IDM_EXIT, IDM_MONITOR, IDM_STARTUP, IDM_TV,
     S_U_TASKBAR_RESTART, WM_USER_TRAYICON,
@@ -8,9 +9,10 @@ use crate::server::ShortServer;
 use crate::startup::Startup;
 use crate::trayicon::TrayIcon;
 use crate::utils::adb::{capture_screen_adb, connect_tv_adb};
+use crate::utils::errors::{check_error, CheckError};
 use crate::utils::explorer::kill_explorer;
-use crate::utils::others::{
-    check_error, get_window_ptr, set_window_ptr, switch_to_monitor, switch_to_tv, CheckError,
+use crate::utils::other_functions::{
+    get_window_ptr, set_window_ptr, switch_to_monitor, switch_to_tv,
 };
 
 use windows::core::PCWSTR;
@@ -187,6 +189,7 @@ impl App {
                         }
                         IDM_TV => switch_to_tv(),
                         IDM_MONITOR => switch_to_monitor(),
+                        100 => alert!("Hello"),
                         _ => {}
                     }
                 }

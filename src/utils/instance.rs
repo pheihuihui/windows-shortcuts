@@ -7,7 +7,7 @@ use windows::{
     },
 };
 
-use super::others::to_wstring;
+use super::other_functions::to_wstring;
 
 /// A struct representing one running instance.
 pub struct SingleInstance {

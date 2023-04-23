@@ -94,9 +94,12 @@ impl TrayIcon {
         unsafe {
             let hmenu = CreatePopupMenu().map_err(|err| format!("Failed to create menu, {err}"))?;
             AppendMenuW(hmenu, startup_flags, IDM_STARTUP as usize, TEXT_STARTUP);
+
             AppendMenuW(hmenu, MF_STRING, IDM_CAPTURE as usize, TEXT_CAPTURE);
             AppendMenuW(hmenu, MF_STRING, IDM_TV as usize, TEXT_S_TV);
             AppendMenuW(hmenu, MF_STRING, IDM_MONITOR as usize, TEXT_S_MONOTOR);
+            AppendMenuW(hmenu, MF_STRING, 100, w!("Hello"));
+
             AppendMenuW(hmenu, MF_STRING, IDM_EXIT as usize, TEXT_EXIT);
             Ok(hmenu)
         }

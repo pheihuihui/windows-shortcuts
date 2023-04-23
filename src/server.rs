@@ -5,9 +5,10 @@ use std::{
 };
 
 use crate::{
+    alert,
     constants::APP_CONFIG,
     utils::inputs::switch_windows,
-    utils::others::{capture_screen, switch_to_monitor, switch_to_tv},
+    utils::other_functions::{capture_screen, switch_to_monitor, switch_to_tv},
 };
 
 pub struct ShortServer {
@@ -54,7 +55,7 @@ impl ShortServer {
                     "/switch_to_monitor" => switch_to_monitor(),
                     "/switch_windows" => switch_windows(),
                     "/capture_screen" => capture_screen(),
-                    "/hello" => println!("{:?}", APP_CONFIG),
+                    "/hello" => alert!("Hello"),
                     _ => {}
                 }
                 let response = "HTTP/1.1 200 OK\r\n\r\n";

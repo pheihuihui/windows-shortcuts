@@ -1,6 +1,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use windows_shortcuts::{alert, app::start_app, utils::instance::SingleInstance};
+use app::start_app;
+use utils::instance::SingleInstance;
+
+pub mod app;
+pub mod config;
+pub mod constants;
+pub mod server;
+pub mod startup;
+pub mod trayicon;
+pub mod utils;
 
 fn main() {
     if let Err(err) = run() {
