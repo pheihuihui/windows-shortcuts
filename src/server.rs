@@ -1,26 +1,37 @@
 use std::{
+    collections::HashMap,
     io::{BufRead, BufReader, Write},
     net::{TcpListener, TcpStream},
     sync::Arc,
 };
 
 use crate::{
-    alert,
     constants::APP_CONFIG,
-    utils::inputs::switch_windows,
-    utils::other_functions::{capture_screen, switch_to_monitor, switch_to_tv},
+    shortcuts::{Shortcut, SHORTCUTS},
 };
 
 pub struct ShortServer {
     listener: Arc<TcpListener>,
+    url_shortcuts: HashMap<String, fn() -> ()>,
 }
 
 impl ShortServer {
     pub fn from_config() -> Self {
         let port = APP_CONFIG.server_port.to_owned();
         let url = format!("0.0.0.0:{port}");
+        let mut url_shortcuts = HashMap::new();
+        let scs = SHORTCUTS
+            .to_vec()
+            .into_iter()
+            .filter(|x| x.web_req_url.is_some())
+            .collect::<Vec<Shortcut>>();
+        for ele in scs {
+            let url = ele.web_req_url.unwrap();
+            url_shortcuts.insert(url, ele.func);
+        }
         ShortServer {
             listener: Arc::new(TcpListener::bind(url).unwrap()),
+            url_shortcuts,
         }
     }
 
@@ -50,14 +61,8 @@ impl ShortServer {
             let url: Vec<_> = url.split(" ").collect();
             if url.len() >= 2 {
                 let url = url[1];
-                match url {
-                    "/switch_to_tv" => switch_to_tv(),
-                    "/switch_to_monitor" => switch_to_monitor(),
-                    "/switch_windows" => switch_windows(),
-                    "/capture_screen" => capture_screen(),
-                    "/hello" => alert!("Hello"),
-                    _ => {}
-                }
+                let func = self.url_shortcuts[&String::from(url)];
+                func();
                 let response = "HTTP/1.1 200 OK\r\n\r\n";
                 stream.write_all(response.as_bytes()).unwrap();
             }
@@ -70,6 +75,7 @@ impl Default for ShortServer {
         let listener = TcpListener::bind("0.0.0.0:9111").unwrap();
         let val: ShortServer = ShortServer {
             listener: Arc::new(listener),
+            url_shortcuts: HashMap::new(),
         };
         val
     }

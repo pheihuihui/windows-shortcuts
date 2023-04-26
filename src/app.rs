@@ -1,19 +1,13 @@
-use std::thread;
-
-use crate::alert;
-use crate::constants::{
-    APP_CONFIG, APP_NAME, IDM_CAPTURE, IDM_EXIT, IDM_MONITOR, IDM_STARTUP, IDM_TV,
-    S_U_TASKBAR_RESTART, WM_USER_TRAYICON,
-};
+use crate::constants::{APP_NAME, IDM_EXIT, IDM_STARTUP, S_U_TASKBAR_RESTART, WM_USER_TRAYICON};
 use crate::server::ShortServer;
+use crate::shortcuts::{Shortcut, SHORTCUTS};
 use crate::startup::Startup;
 use crate::trayicon::TrayIcon;
-use crate::utils::adb::{capture_screen_adb, connect_tv_adb};
+
 use crate::utils::errors::{check_error, CheckError};
-use crate::utils::explorer::kill_explorer;
-use crate::utils::other_functions::{
-    get_window_ptr, set_window_ptr, switch_to_monitor, switch_to_tv,
-};
+use crate::utils::other_functions::{get_window_ptr, set_window_ptr};
+use std::collections::HashMap;
+use std::thread;
 
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{GetLastError, HWND, LPARAM, LRESULT, WPARAM};
@@ -38,6 +32,7 @@ pub struct App {
     hwnd: HWND,
     trayicon: TrayIcon,
     startup: Startup,
+    menu_shortcuts: HashMap<usize, fn() -> ()>,
 }
 
 impl App {
@@ -48,10 +43,21 @@ impl App {
 
         let startup = Startup::init()?;
 
+        let mut menu_shortcuts = HashMap::new();
+        let scs = SHORTCUTS
+            .to_vec()
+            .into_iter()
+            .filter(|x| x.id.is_some() && x.menu_name.is_some())
+            .collect::<Vec<Shortcut>>();
+        for ele in scs {
+            menu_shortcuts.insert(ele.id.unwrap(), ele.func);
+        }
+
         let mut app = App {
             hwnd,
             trayicon,
             startup,
+            menu_shortcuts,
         };
 
         app.set_trayicon()?;
@@ -160,7 +166,15 @@ impl App {
                     app.trayicon.show(app.startup.is_enable)?;
                 }
                 if keycode == WM_LBUTTONUP {
-                    kill_explorer();
+                    let scs = SHORTCUTS
+                        .to_vec()
+                        .into_iter()
+                        .filter(|x| x.is_left_click)
+                        .collect::<Vec<Shortcut>>();
+                    for ele in scs {
+                        let func = ele.func;
+                        func();
+                    }
                 }
 
                 return Ok(LRESULT(0));
@@ -170,6 +184,10 @@ impl App {
                 let kind = ((value >> 16) & 0xffff) as u16;
                 let id = value & 0xffff;
                 if kind == 0 {
+                    let app = get_app(hwnd)?;
+                    let id_usize = usize::try_from(id).unwrap();
+                    let func = app.menu_shortcuts[&id_usize];
+                    func();
                     match id {
                         IDM_EXIT => {
                             if let Ok(app) = get_app(hwnd) {
@@ -178,18 +196,8 @@ impl App {
                             unsafe { PostQuitMessage(0) }
                         }
                         IDM_STARTUP => {
-                            let app = get_app(hwnd)?;
                             app.startup.toggle()?;
                         }
-                        IDM_CAPTURE => {
-                            let ip = APP_CONFIG.tv_ip_addr.to_owned();
-                            let dir = APP_CONFIG.screen_dir.to_owned();
-                            connect_tv_adb(&ip);
-                            capture_screen_adb(&dir);
-                        }
-                        IDM_TV => switch_to_tv(),
-                        IDM_MONITOR => switch_to_monitor(),
-                        100 => alert!("Hello"),
                         _ => {}
                     }
                 }

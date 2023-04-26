@@ -1,8 +1,7 @@
-use crate::constants::{
-    APP_NAME, IDM_CAPTURE, IDM_EXIT, IDM_MONITOR, IDM_STARTUP, IDM_TV, WM_USER_TRAYICON,
-};
+use crate::constants::{APP_NAME, IDM_EXIT, IDM_STARTUP, WM_USER_TRAYICON};
+use crate::shortcuts::{Shortcut, SHORTCUTS};
 
-use windows::core::PCWSTR;
+use windows::core::{HSTRING, PCWSTR};
 use windows::w;
 use windows::Win32::Foundation::{HWND, POINT};
 use windows::Win32::UI::Shell::{
@@ -16,9 +15,6 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 const ICON_BYTES: &[u8] = include_bytes!("../windows.ico");
 const TEXT_STARTUP: PCWSTR = w!("Startup");
-const TEXT_CAPTURE: PCWSTR = w!("Capture Screen");
-const TEXT_S_TV: PCWSTR = w!("Switch to TV");
-const TEXT_S_MONOTOR: PCWSTR = w!("Switch to Monitor");
 const TEXT_EXIT: PCWSTR = w!("Exit");
 
 pub struct TrayIcon {
@@ -95,10 +91,17 @@ impl TrayIcon {
             let hmenu = CreatePopupMenu().map_err(|err| format!("Failed to create menu, {err}"))?;
             AppendMenuW(hmenu, startup_flags, IDM_STARTUP as usize, TEXT_STARTUP);
 
-            AppendMenuW(hmenu, MF_STRING, IDM_CAPTURE as usize, TEXT_CAPTURE);
-            AppendMenuW(hmenu, MF_STRING, IDM_TV as usize, TEXT_S_TV);
-            AppendMenuW(hmenu, MF_STRING, IDM_MONITOR as usize, TEXT_S_MONOTOR);
-            AppendMenuW(hmenu, MF_STRING, 100, w!("Hello"));
+            let scs = SHORTCUTS
+                .to_vec()
+                .into_iter()
+                .filter(|x| x.id.is_some() && x.menu_name.is_some())
+                .collect::<Vec<Shortcut>>();
+
+            for ele in scs {
+                let name = ele.menu_name.unwrap();
+                let name = &HSTRING::from(name);
+                AppendMenuW(hmenu, MF_STRING, ele.id.unwrap(), name);
+            }
 
             AppendMenuW(hmenu, MF_STRING, IDM_EXIT as usize, TEXT_EXIT);
             Ok(hmenu)
