@@ -12,16 +12,14 @@ fn main() {
     let src_dir = Path::new(&src_dir);
     let profile = env::var("PROFILE").unwrap();
 
-    if profile == "release" {
-        let release_dir = src_dir.join("target").join("release");
-        if release_dir.exists() {
-            let config = release_dir
-                .join("config.txt")
-                .as_path()
-                .display()
-                .to_string();
-            let src_config = src_dir.join("config.txt").as_path().display().to_string();
-            fs::copy(src_config, config).unwrap();
-        }
+    let release_dir = src_dir.join("target").join(profile);
+    if release_dir.exists() {
+        let config = release_dir
+            .join("config.txt")
+            .as_path()
+            .display()
+            .to_string();
+        let src_config = src_dir.join("config.txt").as_path().display().to_string();
+        fs::copy(src_config, config).unwrap();
     }
 }

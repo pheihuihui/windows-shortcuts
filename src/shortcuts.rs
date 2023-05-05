@@ -11,6 +11,7 @@ use crate::{
             wakeup_tv_adb,
         },
         explorer::kill_explorer,
+        inputs::close_top_window,
         magic_packet::MagicPacket,
         monitors::{set_external_display, set_internal_display},
         night_light::{disable_night_light, enable_night_light},
@@ -30,7 +31,10 @@ pub static SHORTCUTS: Lazy<Vec<Shortcut>> = Lazy::new(|| {
     vec![
         Shortcut {
             id: Some(8),
-            func: || alert!("hello"),
+            func: || {
+                let txt = APP_CONFIG.screen_dir.to_owned();
+                alert!("{}", txt);
+            },
             is_left_click: false,
             menu_name: Some("Test".to_string()),
             web_req_url: Some("/test_connection".to_string()),
@@ -96,6 +100,13 @@ pub static SHORTCUTS: Lazy<Vec<Shortcut>> = Lazy::new(|| {
             is_left_click: true,
             menu_name: None,
             web_req_url: None,
+        },
+        Shortcut {
+            id: None,
+            func: || close_top_window(),
+            is_left_click: false,
+            menu_name: None,
+            web_req_url: Some("/close_top_window".to_string()),
         },
     ]
 });

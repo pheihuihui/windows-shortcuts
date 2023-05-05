@@ -7,5 +7,5 @@ pub mod macros;
 pub mod magic_packet;
 pub mod monitors;
 pub mod night_light;
-pub mod other_functions;
+pub mod others;
 pub mod registry;

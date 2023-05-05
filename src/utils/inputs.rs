@@ -65,7 +65,7 @@ pub fn switch_windows() {
     }
 }
 
-pub fn close_current_window() {
+pub fn close_top_window() {
     let input_0 = INPUT {
         r#type: INPUT_KEYBOARD,
         Anonymous: INPUT_0 {

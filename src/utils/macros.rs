@@ -2,7 +2,7 @@ use windows::core::PCWSTR;
 use windows::w;
 use windows::Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_ICONERROR, MB_OK};
 
-use crate::utils::other_functions::to_wstring;
+use crate::utils::others::to_wstring;
 
 pub fn message_box(text: &str) {
     let text = to_wstring(text);

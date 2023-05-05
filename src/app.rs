@@ -5,7 +5,7 @@ use crate::startup::Startup;
 use crate::trayicon::TrayIcon;
 
 use crate::utils::errors::{check_error, CheckError};
-use crate::utils::other_functions::{get_window_ptr, set_window_ptr};
+use crate::utils::others::{get_window_ptr, set_window_ptr};
 use std::collections::HashMap;
 use std::thread;
 

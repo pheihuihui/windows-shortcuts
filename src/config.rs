@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::utils::other_functions::{parse_ip_addr, parse_mac_addr};
+use crate::utils::others::{parse_ip_addr, parse_mac_addr};
 
 const KEY_TV_IP: &str = "TV_IP";
 const KEY_TV_MAC: &str = "TV_MAC";
@@ -56,7 +56,7 @@ impl Config {
                     }
                 }
             }
-            Err(_) => println!("failed to read config file"),
+            Err(err) => println!("{}", err),
         }
 
         Ok(res)

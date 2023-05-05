@@ -3,7 +3,7 @@ use windows::w;
 use windows::Win32::Foundation::ERROR_SUCCESS;
 use windows::Win32::System::Registry::{RegDeleteValueW, RegSetValueExW, REG_SZ};
 
-use crate::utils::other_functions::get_exe_path;
+use crate::utils::others::get_exe_path;
 use crate::utils::registry::{get_key, get_value};
 
 const HKEY_RUN: PCWSTR = w!(r"Software\Microsoft\Windows\CurrentVersion\Run");

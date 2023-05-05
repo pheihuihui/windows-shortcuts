@@ -3,7 +3,7 @@
 use once_cell::sync::Lazy;
 use windows::{core::PCWSTR, w, Win32::UI::WindowsAndMessaging::RegisterWindowMessageW};
 
-use crate::config::Config;
+use crate::{config::Config, utils::others::get_exe_folder};
 
 pub const APP_NAME: PCWSTR = w!("Windows Shortcuts");
 pub const WM_USER_TRAYICON: u32 = 6000;
@@ -26,4 +26,10 @@ pub const KEYCODE_CEC_HDMI4: i16 = 246;
 pub static S_U_TASKBAR_RESTART: Lazy<u32> =
     Lazy::new(|| unsafe { RegisterWindowMessageW(w!("TaskbarCreated")) });
 
-pub static APP_CONFIG: Lazy<Config> = Lazy::new(|| Config::load("config.txt").unwrap());
+pub static APP_CONFIG: Lazy<Config> = Lazy::new(|| {
+    let mut path = get_exe_folder().unwrap();
+    path.push("config");
+    path.set_extension("txt");
+    let dir = path.to_str().unwrap();
+    Config::load(dir).unwrap()
+});
