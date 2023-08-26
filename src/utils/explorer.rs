@@ -14,21 +14,21 @@ pub fn kill_explorer() {
         (*pe).dwSize = std::mem::size_of::<PROCESSENTRY32>() as u32;
 
         let result = Process32First(snapshot, pe);
-        if result.as_bool() {
+        if result.is_ok() {
             loop {
                 let file_string = convert_sz_to_string((*pe).szExeFile);
                 if file_string.starts_with("explorer.exe") {
                     let pid = (*pe).th32ProcessID;
                     let h_proc = OpenProcess(PROCESS_TERMINATE, false, pid);
                     if h_proc.is_ok() {
-                        TerminateProcess(h_proc.unwrap(), 0);
+                        let _ = TerminateProcess(h_proc.unwrap(), 0);
                     }
                     break;
                 }
 
                 let result = Process32Next(snapshot, pe);
 
-                if !result.as_bool() {
+                if !result.is_ok() {
                     break;
                 }
             }

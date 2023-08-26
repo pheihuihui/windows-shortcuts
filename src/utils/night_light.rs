@@ -1,8 +1,7 @@
 // https://github.com/RubenZwietering/Night-Light/blob/main/Night-Light.ps1
 
+use windows::core::w;
 use windows::core::PCWSTR;
-use windows::w;
-use windows::Win32::Foundation::ERROR_SUCCESS;
 use windows::Win32::System::Registry::RegSetValueExW;
 use windows::Win32::System::Registry::REG_BINARY;
 
@@ -41,7 +40,7 @@ pub fn enable_night_light() -> Result<(), String> {
                 }
                 let ret =
                     unsafe { RegSetValueExW(key.hkey, HKEY_NAME, 0, REG_BINARY, Some(&new_vec)) };
-                if ret != ERROR_SUCCESS {
+                if ret.is_err() {
                     let err = format!("Fail to set reg value, {:?}", ret);
                     return Err(err);
                 }
@@ -78,7 +77,7 @@ pub fn disable_night_light() -> Result<(), String> {
                 }
                 let ret =
                     unsafe { RegSetValueExW(key.hkey, HKEY_NAME, 0, REG_BINARY, Some(&new_vec)) };
-                if ret != ERROR_SUCCESS {
+                if ret.is_err() {
                     let err = format!("Fail to set reg value, {:?}", ret);
                     return Err(err);
                 }
@@ -97,7 +96,7 @@ pub fn reset_night_light() -> Result<(), String> {
         208, 10, 2, 198, 20, 131, 248, 221, 159, 138, 190, 211, 236, 1, 0, 0, 0, 0,
     ];
     let ret = unsafe { RegSetValueExW(key.hkey, HKEY_NAME, 0, REG_BINARY, Some(&new_vec)) };
-    if ret != ERROR_SUCCESS {
+    if ret.is_err() {
         let err = format!("Fail to set reg value, {:?}", ret);
         return Err(err);
     }

@@ -75,7 +75,7 @@ impl App {
             let ret = unsafe { GetMessageW(&mut message, HWND(0), 0, 0) };
             match ret.0 {
                 -1 => {
-                    unsafe { GetLastError() };
+                    let _ = unsafe { GetLastError() };
                 }
                 0 => break,
                 _ => unsafe {
@@ -93,7 +93,7 @@ impl App {
             .map_err(|err| format!("Failed to get current module handle, {err}"))?;
 
         let window_class = WNDCLASSW {
-            hInstance: hinstance,
+            hInstance: hinstance.into(),
             lpszClassName: APP_NAME,
             hbrBackground: HBRUSH(0),
             lpfnWndProc: Some(App::window_proc),

@@ -1,5 +1,5 @@
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{ERROR_FILE_NOT_FOUND, ERROR_SUCCESS};
+use windows::Win32::Foundation::ERROR_FILE_NOT_FOUND;
 use windows::Win32::System::Registry::{
     RegCloseKey, RegGetValueW, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER, KEY_ALL_ACCESS, REG_BINARY,
     REG_VALUE_TYPE, RRF_RT_REG_BINARY, RRF_RT_REG_SZ,
@@ -13,7 +13,7 @@ pub struct WrapHKey {
 
 impl Drop for WrapHKey {
     fn drop(&mut self) {
-        unsafe { RegCloseKey(self.hkey) };
+        let _ = unsafe { RegCloseKey(self.hkey) };
     }
 }
 
@@ -28,7 +28,7 @@ pub fn get_key(name: PCWSTR) -> Result<WrapHKey, String> {
             &mut hkey as *mut _,
         )
     };
-    if ret != ERROR_SUCCESS {
+    if ret.is_err() {
         let err = format!("Fail to open reg key, {:?}", ret);
         return Err(err);
     }
@@ -50,8 +50,8 @@ pub fn get_value(hkey: &HKEY, val_name: PCWSTR) -> Result<Option<Vec<u16>>, Stri
             Some(&mut size),
         )
     };
-    if ret != ERROR_SUCCESS {
-        if ret == ERROR_FILE_NOT_FOUND {
+    if ret.is_err() {
+        if ret == Err(ERROR_FILE_NOT_FOUND.into()) {
             return Ok(None);
         }
         let err = format!("Fail to get reg value, {:?}", ret);
@@ -76,8 +76,8 @@ pub fn get_raw_value(hkey: &HKEY, val_name: PCWSTR) -> Result<Option<Vec<u8>>, S
             Some(&mut size),
         )
     };
-    if ret != ERROR_SUCCESS {
-        if ret == ERROR_FILE_NOT_FOUND {
+    if ret.is_err() {
+        if ret == Err(ERROR_FILE_NOT_FOUND.into()) {
             return Ok(None);
         }
         let err = format!("Fail to get reg value, {:?}", ret);

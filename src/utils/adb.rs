@@ -14,6 +14,7 @@ pub fn wakeup_tv_adb() {
         .arg("input")
         .arg("keyevent")
         .arg(KEYCODE_WAKEUP)
+        .arg("VORBOSE")
         .stdout(Stdio::piped())
         .output()
         .expect("Failed to wake up tv");

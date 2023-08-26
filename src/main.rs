@@ -1,4 +1,4 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use app::start_app;
 use utils::instance::SingleInstance;
@@ -6,6 +6,7 @@ use utils::instance::SingleInstance;
 pub mod app;
 pub mod config;
 pub mod constants;
+pub mod screen;
 pub mod server;
 pub mod shortcuts;
 pub mod startup;

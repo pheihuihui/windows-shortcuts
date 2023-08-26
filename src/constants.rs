@@ -1,7 +1,10 @@
 #![allow(unused)]
 
 use once_cell::sync::Lazy;
-use windows::{core::PCWSTR, w, Win32::UI::WindowsAndMessaging::RegisterWindowMessageW};
+use windows::{
+    core::{w, PCWSTR},
+    Win32::UI::WindowsAndMessaging::RegisterWindowMessageW,
+};
 
 use crate::{config::Config, utils::others::get_exe_folder};
 

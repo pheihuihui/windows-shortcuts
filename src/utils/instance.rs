@@ -21,7 +21,7 @@ impl SingleInstance {
     /// Returns a new SingleInstance object.
     pub fn create(name: &str) -> Result<Self, String> {
         unsafe {
-            SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+            let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         }
         let name = to_wstring(name);
         let handle = unsafe { CreateMutexW(None, BOOL(1), PCWSTR(name.as_ptr())) }
@@ -45,8 +45,8 @@ impl Drop for SingleInstance {
     fn drop(&mut self) {
         if let Some(handle) = self.handle.take() {
             unsafe {
-                ReleaseMutex(handle);
-                CloseHandle(handle);
+                let _ = ReleaseMutex(handle);
+                let _ = CloseHandle(handle);
             }
         }
     }

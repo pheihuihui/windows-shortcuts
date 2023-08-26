@@ -1,8 +1,7 @@
 use crate::constants::{APP_NAME, IDM_EXIT, IDM_STARTUP, WM_USER_TRAYICON};
 use crate::shortcuts::{Shortcut, SHORTCUTS};
 
-use windows::core::{HSTRING, PCWSTR};
-use windows::w;
+use windows::core::{w, HSTRING, PCWSTR};
 use windows::Win32::Foundation::{HWND, POINT};
 use windows::Win32::UI::Shell::{
     Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NOTIFYICONDATAW,
@@ -41,9 +40,7 @@ impl TrayIcon {
             SetForegroundWindow(hwnd)
                 .ok()
                 .map_err(|e| format!("Fail to set foreground window, {}", e))?;
-            GetCursorPos(&mut cursor)
-                .ok()
-                .map_err(|e| format!("Fail to get cursor position, {}", e))?;
+            GetCursorPos(&mut cursor).map_err(|e| format!("Fail to get cursor position, {}", e))?;
             let hmenu = self
                 .create_menu(startup)
                 .map_err(|e| format!("Fail to create menu, {}", e))?;
@@ -56,7 +53,6 @@ impl TrayIcon {
                 hwnd,
                 None,
             )
-            .ok()
             .map_err(|e| format!("Fail to show popup menu, {}", e))?
         };
         Ok(())
@@ -89,7 +85,7 @@ impl TrayIcon {
         let startup_flags = if startup { MF_CHECKED } else { MF_UNCHECKED };
         unsafe {
             let hmenu = CreatePopupMenu().map_err(|err| format!("Failed to create menu, {err}"))?;
-            AppendMenuW(hmenu, startup_flags, IDM_STARTUP as usize, TEXT_STARTUP);
+            let _ = AppendMenuW(hmenu, startup_flags, IDM_STARTUP as usize, TEXT_STARTUP);
 
             let scs = SHORTCUTS
                 .to_vec()
@@ -100,10 +96,10 @@ impl TrayIcon {
             for ele in scs {
                 let name = ele.menu_name.unwrap();
                 let name = &HSTRING::from(name);
-                AppendMenuW(hmenu, MF_STRING, ele.id.unwrap(), name);
+                let _ = AppendMenuW(hmenu, MF_STRING, ele.id.unwrap(), name);
             }
 
-            AppendMenuW(hmenu, MF_STRING, IDM_EXIT as usize, TEXT_EXIT);
+            let _ = AppendMenuW(hmenu, MF_STRING, IDM_EXIT as usize, TEXT_EXIT);
             Ok(hmenu)
         }
     }

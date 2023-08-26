@@ -1,6 +1,4 @@
-use windows::core::PCWSTR;
-use windows::w;
-use windows::Win32::Foundation::ERROR_SUCCESS;
+use windows::core::{w, PCWSTR};
 use windows::Win32::System::Registry::{RegDeleteValueW, RegSetValueExW, REG_SZ};
 
 use crate::utils::others::get_exe_path;
@@ -47,7 +45,7 @@ impl Startup {
         let path = get_exe_path();
         let path_u8 = unsafe { path.align_to::<u8>().1 };
         let ret = unsafe { RegSetValueExW(key.hkey, HKEY_NAME, 0, REG_SZ, Some(path_u8)) };
-        if ret != ERROR_SUCCESS {
+        if ret.is_err() {
             let err = format!("Fail to write reg value, {:?}", ret);
             return Err(err);
         }
@@ -57,7 +55,7 @@ impl Startup {
     fn disable() -> Result<(), String> {
         let key = get_key(HKEY_RUN)?;
         let ret = unsafe { RegDeleteValueW(key.hkey, HKEY_NAME) };
-        if ret != ERROR_SUCCESS {
+        if ret.is_err() {
             let err = format!("Fail to delele reg value, {:?}", ret);
             return Err(err);
         }

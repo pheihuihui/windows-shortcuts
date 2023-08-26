@@ -5,6 +5,7 @@ use once_cell::sync::Lazy;
 use crate::{
     alert,
     constants::APP_CONFIG,
+    screen::{modes::CaptureMode, take_screenshot_for_windows},
     utils::{
         adb::{
             capture_screen_adb, connect_tv_adb, sleep_tv_adb, switch_to_home, switch_to_port_4,
@@ -50,6 +51,16 @@ pub static SHORTCUTS: Lazy<Vec<Shortcut>> = Lazy::new(|| {
             is_left_click: false,
             menu_name: Some("Capture Screen".to_string()),
             web_req_url: Some("/capture_screen".to_string()),
+        },
+        Shortcut {
+            id: Some(19),
+            func: || {
+                let dir = APP_CONFIG.screen_dir.to_owned();
+                let _ = take_screenshot_for_windows(&dir, CaptureMode::Primary);
+            },
+            is_left_click: false,
+            menu_name: Some("Capture Windows Screen".to_string()),
+            web_req_url: Some("/capture_windows_screen".to_string()),
         },
         Shortcut {
             id: Some(10),
