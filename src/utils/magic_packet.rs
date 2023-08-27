@@ -39,7 +39,7 @@ impl MagicPacket {
     }
 
     pub fn send(&self) -> std::io::Result<()> {
-        let local = APP_CONFIG.server_addr;
+        let local = APP_CONFIG.get().unwrap().server_addr;
         self.send_to(
             (Ipv4Addr::new(255, 255, 255, 255), 9),
             (Ipv4Addr::new(local[0], local[1], local[2], local[3]), 0),

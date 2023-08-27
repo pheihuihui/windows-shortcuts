@@ -1,26 +1,39 @@
-use crate::constants::{APP_NAME, IDM_EXIT, IDM_STARTUP, S_U_TASKBAR_RESTART, WM_USER_TRAYICON};
+use crate::config::Config;
+use crate::constants::{
+    APP_CONFIG, APP_NAME, IDM_EXIT, IDM_STARTUP, S_U_TASKBAR_RESTART, WM_USER_TRAYICON,
+};
 use crate::server::ShortServer;
-use crate::shortcuts::{Shortcut, SHORTCUTS};
+use crate::shortcuts::{build_shortcuts, Shortcut, SHORTCUTS};
 use crate::startup::Startup;
 use crate::trayicon::TrayIcon;
 
 use crate::utils::errors::{check_error, CheckError};
-use crate::utils::others::{get_window_ptr, set_window_ptr};
+use crate::utils::others::{get_exe_folder, get_window_ptr, set_window_ptr};
 use std::collections::HashMap;
 use std::thread;
 
-use windows::core::PCWSTR;
+use windows::core::{w, PCWSTR};
 use windows::Win32::Foundation::{GetLastError, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::HBRUSH;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, GetWindowLongPtrW,
-    PostQuitMessage, RegisterClassW, SetWindowLongPtrW, TranslateMessage, CW_USEDEFAULT, GWL_STYLE,
-    MSG, WINDOW_STYLE, WM_COMMAND, WM_LBUTTONUP, WM_RBUTTONUP, WNDCLASSW, WS_CAPTION,
-    WS_EX_TOOLWINDOW,
+    PostQuitMessage, RegisterClassW, RegisterWindowMessageW, SetWindowLongPtrW, TranslateMessage,
+    CW_USEDEFAULT, GWL_STYLE, MSG, WINDOW_STYLE, WM_COMMAND, WM_LBUTTONUP, WM_RBUTTONUP, WNDCLASSW,
+    WS_CAPTION, WS_EX_TOOLWINDOW,
 };
 
 pub fn start_app() -> Result<(), String> {
+    let _ =
+        S_U_TASKBAR_RESTART.get_or_init(|| unsafe { RegisterWindowMessageW(w!("TaskbarCreated")) });
+    let _ = APP_CONFIG.get_or_init(|| {
+        let mut path = get_exe_folder().unwrap();
+        path.push("config");
+        path.set_extension("txt");
+        let dir = path.to_str().unwrap();
+        Config::load(dir).unwrap()
+    });
+    build_shortcuts();
     let short = ShortServer::from_config();
     thread::spawn(move || {
         short.start_server();
@@ -45,6 +58,8 @@ impl App {
 
         let mut menu_shortcuts = HashMap::new();
         let scs = SHORTCUTS
+            .get()
+            .unwrap()
             .to_vec()
             .into_iter()
             .filter(|x| x.id.is_some() && x.menu_name.is_some())
@@ -167,6 +182,8 @@ impl App {
                 }
                 if keycode == WM_LBUTTONUP {
                     let scs = SHORTCUTS
+                        .get()
+                        .unwrap()
                         .to_vec()
                         .into_iter()
                         .filter(|x| x.is_left_click)
@@ -202,7 +219,7 @@ impl App {
                     }
                 }
             }
-            _ if msg == *S_U_TASKBAR_RESTART => {
+            _ if msg == *S_U_TASKBAR_RESTART.get().unwrap() => {
                 let app = get_app(hwnd)?;
                 app.set_trayicon()?;
             }

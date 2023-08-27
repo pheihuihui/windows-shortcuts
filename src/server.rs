@@ -17,10 +17,12 @@ pub struct ShortServer {
 
 impl ShortServer {
     pub fn from_config() -> Self {
-        let port = APP_CONFIG.server_port.to_owned();
+        let port = APP_CONFIG.get().unwrap().server_port.to_owned();
         let url = format!("0.0.0.0:{port}");
         let mut url_shortcuts = HashMap::new();
         let scs = SHORTCUTS
+            .get()
+            .unwrap()
             .to_vec()
             .into_iter()
             .filter(|x| x.web_req_url.is_some())

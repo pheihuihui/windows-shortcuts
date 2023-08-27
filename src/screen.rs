@@ -6,6 +6,10 @@ mod display_info;
 pub mod modes;
 mod window_info;
 
+use std::io::Write;
+use std::sync::mpsc::channel;
+use std::time::SystemTime;
+
 use windows::core::{ComInterface, IInspectable, Result, HSTRING};
 use windows::Foundation::TypedEventHandler;
 use windows::Graphics::Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem};
@@ -26,9 +30,6 @@ use windows::Win32::UI::WindowsAndMessaging::{GetDesktopWindow, GetWindowThreadP
 use capture::enumerate_capturable_windows;
 use display_info::enumerate_displays;
 use modes::CaptureMode;
-use std::io::Write;
-use std::sync::mpsc::channel;
-use std::time::SystemTime;
 use window_info::WindowInfo;
 
 fn create_capture_item_for_window(window_handle: HWND) -> Result<GraphicsCaptureItem> {

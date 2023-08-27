@@ -88,6 +88,8 @@ impl TrayIcon {
             let _ = AppendMenuW(hmenu, startup_flags, IDM_STARTUP as usize, TEXT_STARTUP);
 
             let scs = SHORTCUTS
+                .get()
+                .unwrap()
                 .to_vec()
                 .into_iter()
                 .filter(|x| x.id.is_some() && x.menu_name.is_some())
