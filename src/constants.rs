@@ -1,13 +1,10 @@
 #![allow(unused)]
 
-use std::{sync::OnceLock, thread::spawn};
+use std::sync::OnceLock;
 
-use windows::{
-    core::{w, PCWSTR},
-    Win32::UI::WindowsAndMessaging::RegisterWindowMessageW,
-};
+use windows::core::{w, PCWSTR};
 
-use crate::{config::Config, shortcuts::Shortcut, utils::others::get_exe_folder};
+use crate::config::Config;
 
 pub const APP_NAME: PCWSTR = w!("Windows Shortcuts");
 pub const WM_USER_TRAYICON: u32 = 6000;
