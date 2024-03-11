@@ -51,7 +51,7 @@ pub fn get_value(hkey: &HKEY, val_name: PCWSTR) -> Result<Option<Vec<u16>>, Stri
         )
     };
     if ret.is_err() {
-        if ret == Err(ERROR_FILE_NOT_FOUND.into()) {
+        if ret == ERROR_FILE_NOT_FOUND.into() {
             return Ok(None);
         }
         let err = format!("Fail to get reg value, {:?}", ret);
@@ -77,7 +77,7 @@ pub fn get_raw_value(hkey: &HKEY, val_name: PCWSTR) -> Result<Option<Vec<u8>>, S
         )
     };
     if ret.is_err() {
-        if ret == Err(ERROR_FILE_NOT_FOUND.into()) {
+        if ret == ERROR_FILE_NOT_FOUND.into() {
             return Ok(None);
         }
         let err = format!("Fail to get reg value, {:?}", ret);

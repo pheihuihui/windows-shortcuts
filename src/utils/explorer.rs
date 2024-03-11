@@ -36,9 +36,9 @@ pub fn kill_explorer() {
     }
 }
 
-fn convert_sz_to_string(file: [u8; 260]) -> String {
+fn convert_sz_to_string(file: [i8; 260]) -> String {
     let chars = file
-        .map(|x| if x == 0 { ' ' } else { char::from(x) })
+        .map(|x| if x == 0 { ' ' } else { char::from(x as u8) })
         .into_iter()
         .collect::<String>();
     chars

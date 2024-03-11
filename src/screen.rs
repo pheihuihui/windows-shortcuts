@@ -10,7 +10,7 @@ use std::io::Write;
 use std::sync::mpsc::channel;
 use std::time::SystemTime;
 
-use windows::core::{ComInterface, IInspectable, Result, HSTRING};
+use windows::core::{IInspectable, Result, HSTRING};
 use windows::Foundation::TypedEventHandler;
 use windows::Graphics::Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem};
 use windows::Graphics::DirectX::DirectXPixelFormat;
@@ -31,6 +31,7 @@ use capture::enumerate_capturable_windows;
 use display_info::enumerate_displays;
 use modes::CaptureMode;
 use window_info::WindowInfo;
+use windows::core::Interface;
 
 fn create_capture_item_for_window(window_handle: HWND) -> Result<GraphicsCaptureItem> {
     let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
@@ -89,7 +90,10 @@ fn take_screenshot(item: &GraphicsCaptureItem, save_dir: &str) -> Result<()> {
             texture.unwrap()
         };
 
-        d3d_context.CopyResource(Some(&copy_texture.cast()?), Some(&source_texture.cast()?));
+        d3d_context.CopyResource(
+            Some(&copy_texture.cast::<ID3D11Resource>()?),
+            Some(&source_texture.cast::<ID3D11Resource>()?),
+        );
 
         session.Close()?;
         frame_pool.Close()?;
