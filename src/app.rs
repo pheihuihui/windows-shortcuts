@@ -94,7 +94,7 @@ impl App {
                 }
                 0 => break,
                 _ => unsafe {
-                    TranslateMessage(&message);
+                    let _ = TranslateMessage(&message);
                     DispatchMessageW(&message);
                 },
             }
@@ -203,8 +203,10 @@ impl App {
                 if kind == 0 {
                     let app = get_app(hwnd)?;
                     let id_usize = usize::try_from(id).unwrap();
-                    let func = app.menu_shortcuts[&id_usize];
-                    func();
+                    if app.menu_shortcuts.contains_key(&id_usize) {
+                        let func = app.menu_shortcuts[&id_usize];
+                        func();
+                    }
                     match id {
                         IDM_EXIT => {
                             if let Ok(app) = get_app(hwnd) {

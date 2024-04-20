@@ -44,7 +44,7 @@ impl TrayIcon {
             let hmenu = self
                 .create_menu(startup)
                 .map_err(|e| format!("Fail to create menu, {}", e))?;
-            TrackPopupMenu(
+            let _ = TrackPopupMenu(
                 hmenu,
                 TPM_LEFTALIGN | TPM_BOTTOMALIGN,
                 cursor.x,
@@ -52,7 +52,7 @@ impl TrayIcon {
                 0,
                 hwnd,
                 None,
-            )
+            );
         };
         Ok(())
     }
@@ -108,6 +108,8 @@ impl TrayIcon {
 
 impl Drop for TrayIcon {
     fn drop(&mut self) {
-        unsafe { Shell_NotifyIconW(NIM_DELETE, &self.data) };
+        unsafe {
+            let _ = Shell_NotifyIconW(NIM_DELETE, &self.data);
+        };
     }
 }
