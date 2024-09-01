@@ -87,7 +87,7 @@ impl App {
     fn eventloop() -> Result<(), String> {
         let mut message = MSG::default();
         loop {
-            let ret = unsafe { GetMessageW(&mut message, HWND(0), 0, 0) };
+            let ret = unsafe { GetMessageW(&mut message, HWND(std::ptr::null_mut()), 0, 0) };
             match ret.0 {
                 -1 => {
                     let _ = unsafe { GetLastError() };
@@ -110,7 +110,7 @@ impl App {
         let window_class = WNDCLASSW {
             hInstance: hinstance.into(),
             lpszClassName: APP_NAME,
-            hbrBackground: HBRUSH(0),
+            hbrBackground: HBRUSH(std::ptr::null_mut()),
             lpfnWndProc: Some(App::window_proc),
             ..Default::default()
         };
@@ -135,6 +135,7 @@ impl App {
                 None,
             )
         }
+        .unwrap()
         .check_error()
         .map_err(|err| format!("Failed to create windows, {err}"))?;
 

@@ -16,7 +16,7 @@ pub fn enumerate_capturable_windows() -> Vec<WindowInfo> {
     unsafe {
         let console_window = {
             let window_handle = GetConsoleWindow();
-            if window_handle.0 == 0 {
+            if window_handle.0 == std::ptr::null_mut() {
                 None
             } else {
                 Some(window_handle)

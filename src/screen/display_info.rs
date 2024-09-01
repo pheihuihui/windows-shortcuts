@@ -7,7 +7,7 @@ use windows::Win32::Graphics::Gdi::{
 #[derive(Clone)]
 pub struct DisplayInfo {
     pub handle: HMONITOR,
-    pub display_name: String,
+    pub _display_name: String,
 }
 
 impl DisplayInfo {
@@ -25,7 +25,7 @@ impl DisplayInfo {
 
         Ok(Self {
             handle: monitor_handle,
-            display_name,
+            _display_name: display_name,
         })
     }
 }
@@ -33,7 +33,13 @@ impl DisplayInfo {
 pub fn enumerate_displays() -> Result<Box<Vec<DisplayInfo>>> {
     unsafe {
         let displays = Box::into_raw(Box::new(Vec::<DisplayInfo>::new()));
-        EnumDisplayMonitors(HDC(0), None, Some(enum_monitor), LPARAM(displays as isize)).ok()?;
+        EnumDisplayMonitors(
+            HDC(std::ptr::null_mut()),
+            None,
+            Some(enum_monitor),
+            LPARAM(displays as isize),
+        )
+        .ok()?;
         Ok(Box::from_raw(displays))
     }
 }

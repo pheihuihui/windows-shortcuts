@@ -41,7 +41,7 @@ impl CheckError for HANDLE {
 impl CheckError for HWND {
     fn check_error(self) -> windows::core::Result<Self> {
         // If the function fails, the return value is NULL.
-        if self.0 == 0 {
+        if self.0 == std::ptr::null_mut() {
             Err(Error::from_win32())
         } else {
             Ok(self)
