@@ -13,7 +13,7 @@ use crate::{
         inputs::close_top_window,
         magic_packet::MagicPacket,
         monitors::{set_external_display, set_internal_display},
-        night_light::{disable_night_light, enable_night_light},
+        night_light::disable_night_light,
     },
 };
 
@@ -98,7 +98,7 @@ pub fn build_shortcuts() {
                             thread::sleep(time::Duration::from_millis(200));
                             switch_to_home();
                             thread::sleep(time::Duration::from_millis(200));
-                            enable_night_light().unwrap();
+                            // enable_night_light().unwrap();
                             set_internal_display();
                             sleep_tv_adb();
                         });

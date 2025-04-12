@@ -1,10 +1,10 @@
 use windows::{
-    core::PCWSTR,
     Win32::{
-        Foundation::{CloseHandle, BOOL, ERROR_ALREADY_EXISTS, HANDLE},
+        Foundation::{CloseHandle, ERROR_ALREADY_EXISTS, HANDLE},
         System::Threading::{CreateMutexW, ReleaseMutex},
-        UI::HiDpi::{SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2},
+        UI::HiDpi::{DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetProcessDpiAwarenessContext},
     },
+    core::PCWSTR,
 };
 
 use super::others::to_wstring;
@@ -24,7 +24,7 @@ impl SingleInstance {
             let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         }
         let name = to_wstring(name);
-        let handle = unsafe { CreateMutexW(None, BOOL(1), PCWSTR(name.as_ptr())) }
+        let handle = unsafe { CreateMutexW(None, true, PCWSTR(name.as_ptr())) }
             .map_err(|err| format!("Fail to setup single instance, {err}"))?;
         let handle =
             if windows::core::Error::from_win32().code() == ERROR_ALREADY_EXISTS.to_hresult() {

@@ -3,25 +3,25 @@ use crate::constants::{
     APP_CONFIG, APP_NAME, IDM_EXIT, IDM_STARTUP, S_U_TASKBAR_RESTART, WM_USER_TRAYICON,
 };
 use crate::server::ShortServer;
-use crate::shortcuts::{build_shortcuts, Shortcut, SHORTCUTS};
+use crate::shortcuts::{SHORTCUTS, Shortcut, build_shortcuts};
 use crate::startup::Startup;
 use crate::trayicon::TrayIcon;
 
-use crate::utils::errors::{check_error, CheckError};
+use crate::utils::errors::{CheckError, check_error};
 use crate::utils::others::{get_exe_folder, get_window_ptr, set_window_ptr};
 use std::collections::HashMap;
 use std::thread;
 
-use windows::core::{w, PCWSTR};
-use windows::Win32::Foundation::{GetLastError, HWND, LPARAM, LRESULT, WPARAM};
+use windows::Win32::Foundation::{GetLastError, HINSTANCE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::HBRUSH;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, GetWindowLongPtrW,
-    PostQuitMessage, RegisterClassW, RegisterWindowMessageW, SetWindowLongPtrW, TranslateMessage,
-    CW_USEDEFAULT, GWL_STYLE, MSG, WINDOW_STYLE, WM_COMMAND, WM_LBUTTONUP, WM_RBUTTONUP, WNDCLASSW,
-    WS_CAPTION, WS_EX_TOOLWINDOW,
+    CW_USEDEFAULT, CreateWindowExW, DefWindowProcW, DispatchMessageW, GWL_STYLE, GetMessageW,
+    GetWindowLongPtrW, MSG, PostQuitMessage, RegisterClassW, RegisterWindowMessageW,
+    SetWindowLongPtrW, TranslateMessage, WINDOW_STYLE, WM_COMMAND, WM_LBUTTONUP, WM_RBUTTONUP,
+    WNDCLASSW, WS_CAPTION, WS_EX_TOOLWINDOW,
 };
+use windows::core::{PCWSTR, w};
 
 pub fn start_app() -> Result<(), String> {
     let _ =
@@ -87,7 +87,7 @@ impl App {
     fn eventloop() -> Result<(), String> {
         let mut message = MSG::default();
         loop {
-            let ret = unsafe { GetMessageW(&mut message, HWND(std::ptr::null_mut()), 0, 0) };
+            let ret = unsafe { GetMessageW(&mut message, Some(HWND(std::ptr::null_mut())), 0, 0) };
             match ret.0 {
                 -1 => {
                     let _ = unsafe { GetLastError() };
@@ -104,8 +104,10 @@ impl App {
     }
 
     fn create_window() -> Result<HWND, String> {
-        let hinstance = unsafe { GetModuleHandleW(None) }
+        let _hinstance = unsafe { GetModuleHandleW(None) }
             .map_err(|err| format!("Failed to get current module handle, {err}"))?;
+
+        let hinstance = HINSTANCE::from(_hinstance);
 
         let window_class = WNDCLASSW {
             hInstance: hinstance.into(),
@@ -131,7 +133,7 @@ impl App {
                 CW_USEDEFAULT,
                 None,
                 None,
-                hinstance,
+                Some(hinstance),
                 None,
             )
         }
@@ -162,7 +164,7 @@ impl App {
             Ok(ret) => ret,
             Err(err) => {
                 println!("{:?}", err);
-                DefWindowProcW(hwnd, msg, wparam, lparam)
+                unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
             }
         }
     }

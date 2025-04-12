@@ -2,7 +2,7 @@
 
 use std::sync::OnceLock;
 
-use windows::core::{w, PCWSTR};
+use windows::core::{PCWSTR, w};
 
 use crate::config::Config;
 

@@ -1,9 +1,9 @@
 // https://github.com/RubenZwietering/Night-Light/blob/main/Night-Light.ps1
 
-use windows::core::w;
-use windows::core::PCWSTR;
-use windows::Win32::System::Registry::RegSetValueExW;
 use windows::Win32::System::Registry::REG_BINARY;
+use windows::Win32::System::Registry::RegSetValueExW;
+use windows::core::PCWSTR;
+use windows::core::w;
 
 use crate::utils::registry::get_key;
 use crate::utils::registry::get_raw_value;
@@ -38,8 +38,9 @@ pub fn enable_night_light() -> Result<(), String> {
                         break;
                     }
                 }
-                let ret =
-                    unsafe { RegSetValueExW(key.hkey, HKEY_NAME, 0, REG_BINARY, Some(&new_vec)) };
+                let ret = unsafe {
+                    RegSetValueExW(key.hkey, HKEY_NAME, Some(0), REG_BINARY, Some(&new_vec))
+                };
                 if ret.is_err() {
                     let err = format!("Fail to set reg value, {:?}", ret);
                     return Err(err);
@@ -75,8 +76,9 @@ pub fn disable_night_light() -> Result<(), String> {
                         break;
                     }
                 }
-                let ret =
-                    unsafe { RegSetValueExW(key.hkey, HKEY_NAME, 0, REG_BINARY, Some(&new_vec)) };
+                let ret = unsafe {
+                    RegSetValueExW(key.hkey, HKEY_NAME, Some(0), REG_BINARY, Some(&new_vec))
+                };
                 if ret.is_err() {
                     let err = format!("Fail to set reg value, {:?}", ret);
                     return Err(err);
@@ -95,7 +97,7 @@ pub fn reset_night_light() -> Result<(), String> {
         67u8, 66, 1, 0, 10, 2, 1, 0, 42, 6, 248, 203, 136, 160, 6, 42, 43, 14, 19, 67, 66, 1, 0,
         208, 10, 2, 198, 20, 131, 248, 221, 159, 138, 190, 211, 236, 1, 0, 0, 0, 0,
     ];
-    let ret = unsafe { RegSetValueExW(key.hkey, HKEY_NAME, 0, REG_BINARY, Some(&new_vec)) };
+    let ret = unsafe { RegSetValueExW(key.hkey, HKEY_NAME, Some(0), REG_BINARY, Some(&new_vec)) };
     if ret.is_err() {
         let err = format!("Fail to set reg value, {:?}", ret);
         return Err(err);

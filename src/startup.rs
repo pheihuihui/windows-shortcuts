@@ -1,5 +1,5 @@
-use windows::core::{w, PCWSTR};
-use windows::Win32::System::Registry::{RegDeleteValueW, RegSetValueExW, REG_SZ};
+use windows::Win32::System::Registry::{REG_SZ, RegDeleteValueW, RegSetValueExW};
+use windows::core::{PCWSTR, w};
 
 use crate::utils::others::get_exe_path;
 use crate::utils::registry::{get_key, get_value};
@@ -44,7 +44,7 @@ impl Startup {
         let key = get_key(HKEY_RUN)?;
         let path = get_exe_path();
         let path_u8 = unsafe { path.align_to::<u8>().1 };
-        let ret = unsafe { RegSetValueExW(key.hkey, HKEY_NAME, 0, REG_SZ, Some(path_u8)) };
+        let ret = unsafe { RegSetValueExW(key.hkey, HKEY_NAME, Some(0), REG_SZ, Some(path_u8)) };
         if ret.is_err() {
             let err = format!("Fail to write reg value, {:?}", ret);
             return Err(err);

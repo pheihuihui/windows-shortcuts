@@ -1,6 +1,6 @@
 use windows::{
+    Win32::Foundation::{ERROR_SUCCESS, HANDLE, HWND, SetLastError},
     core::Error,
-    Win32::Foundation::{SetLastError, ERROR_SUCCESS, HANDLE, HWND},
 };
 
 #[inline]

@@ -1,9 +1,9 @@
-use windows::core::PCWSTR;
 use windows::Win32::Foundation::ERROR_FILE_NOT_FOUND;
 use windows::Win32::System::Registry::{
-    RegCloseKey, RegGetValueW, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER, KEY_ALL_ACCESS, REG_BINARY,
-    REG_VALUE_TYPE, RRF_RT_REG_BINARY, RRF_RT_REG_SZ,
+    HKEY, HKEY_CURRENT_USER, KEY_ALL_ACCESS, REG_BINARY, REG_VALUE_TYPE, RRF_RT_REG_BINARY,
+    RRF_RT_REG_SZ, RegCloseKey, RegGetValueW, RegOpenKeyExW,
 };
+use windows::core::PCWSTR;
 
 use super::others::BUFFER_SIZE;
 
@@ -23,7 +23,7 @@ pub fn get_key(name: PCWSTR) -> Result<WrapHKey, String> {
         RegOpenKeyExW(
             HKEY_CURRENT_USER,
             name,
-            0,
+            Some(0),
             KEY_ALL_ACCESS,
             &mut hkey as *mut _,
         )

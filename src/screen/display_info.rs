@@ -1,8 +1,8 @@
-use windows::core::Result;
-use windows::Win32::Foundation::{BOOL, LPARAM, RECT};
+use windows::Win32::Foundation::{LPARAM, RECT};
 use windows::Win32::Graphics::Gdi::{
     EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFOEXW,
 };
+use windows::core::{BOOL, Result};
 
 #[derive(Clone)]
 pub struct DisplayInfo {
@@ -34,7 +34,7 @@ pub fn enumerate_displays() -> Result<Box<Vec<DisplayInfo>>> {
     unsafe {
         let displays = Box::into_raw(Box::new(Vec::<DisplayInfo>::new()));
         EnumDisplayMonitors(
-            HDC(std::ptr::null_mut()),
+            Some(HDC(std::ptr::null_mut())),
             None,
             Some(enum_monitor),
             LPARAM(displays as isize),

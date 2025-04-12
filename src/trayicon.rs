@@ -1,16 +1,16 @@
 use crate::constants::{APP_NAME, IDM_EXIT, IDM_STARTUP, WM_USER_TRAYICON};
-use crate::shortcuts::{Shortcut, SHORTCUTS};
+use crate::shortcuts::{SHORTCUTS, Shortcut};
 
-use windows::core::{w, HSTRING, PCWSTR};
 use windows::Win32::Foundation::{HWND, POINT};
 use windows::Win32::UI::Shell::{
-    Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NOTIFYICONDATAW,
+    NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NOTIFYICONDATAW, Shell_NotifyIconW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    AppendMenuW, CreateIconFromResourceEx, CreatePopupMenu, GetCursorPos,
-    LookupIconIdFromDirectoryEx, SetForegroundWindow, TrackPopupMenu, HMENU, LR_DEFAULTCOLOR,
-    MF_CHECKED, MF_STRING, MF_UNCHECKED, TPM_BOTTOMALIGN, TPM_LEFTALIGN,
+    AppendMenuW, CreateIconFromResourceEx, CreatePopupMenu, GetCursorPos, HMENU, LR_DEFAULTCOLOR,
+    LookupIconIdFromDirectoryEx, MF_CHECKED, MF_STRING, MF_UNCHECKED, SetForegroundWindow,
+    TPM_BOTTOMALIGN, TPM_LEFTALIGN, TrackPopupMenu,
 };
+use windows::core::{HSTRING, PCWSTR, w};
 
 const ICON_BYTES: &[u8] = include_bytes!("../windows.ico");
 const TEXT_STARTUP: PCWSTR = w!("Startup");
@@ -49,7 +49,7 @@ impl TrayIcon {
                 TPM_LEFTALIGN | TPM_BOTTOMALIGN,
                 cursor.x,
                 cursor.y,
-                0,
+                Some(0),
                 hwnd,
                 None,
             );

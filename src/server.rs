@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     constants::APP_CONFIG,
-    shortcuts::{Shortcut, SHORTCUTS},
+    shortcuts::{SHORTCUTS, Shortcut},
 };
 
 pub struct ShortServer {
