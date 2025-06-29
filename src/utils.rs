@@ -1,4 +1,5 @@
 pub mod adb;
+pub mod clipboard;
 pub mod errors;
 pub mod explorer;
 pub mod inputs;

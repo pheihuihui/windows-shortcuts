@@ -9,6 +9,7 @@ use crate::{
             capture_screen_adb, connect_tv_adb, sleep_tv_adb, switch_to_home, switch_to_port_4,
             wakeup_tv_adb,
         },
+        clipboard::clear_clipboard,
         explorer::kill_explorer,
         inputs::close_top_window,
         magic_packet::MagicPacket,
@@ -109,7 +110,10 @@ pub fn build_shortcuts() {
                 },
                 Shortcut {
                     id: None,
-                    func: || kill_explorer(),
+                    func: || {
+                        clear_clipboard();
+                        kill_explorer();
+                    },
                     is_left_click: true,
                     menu_name: None,
                     web_req_url: None,
